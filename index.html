@@ -128,6 +128,25 @@
       content: ""; position: absolute; left: 1.3em; top: 1.25em; width: 1.3em; height: 1.3em; border-radius: 50%;
       background: var(--main) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 62% no-repeat;
     }
+    .target {
+      background: linear-gradient(rgba(18, 131, 139, .84), rgba(10, 74, 79, .88)), url("images/bg-table.webp") center 70% / cover no-repeat;
+    }
+    .target .eyebrow { color: rgba(255,255,255,.85); }
+    .target .section-title { color: var(--white); }
+    .target__panel { background: rgba(255,255,255,.95); border-radius: 20px; padding: clamp(24px, 5vw, 44px); box-shadow: 0 20px 40px rgba(0,0,0,.15); }
+    .target .check-list li { background: transparent; border: 0; border-bottom: 1px dashed rgba(18, 131, 139, .25); border-radius: 0; }
+    .target .check-list li:last-child { border-bottom: 0; }
+    @media (max-width: 640px) {
+      .target__panel { padding: 20px 16px; }
+      .target .check-list li { padding: .9em .4em .9em 2.8em; }
+      .target .check-list li::before { left: .4em; top: 1.15em; }
+    }
+    .hl { padding: 0 .1em; }
+    .hl--pink { background: linear-gradient(transparent 52%, #f7d3e2 52%); }
+    .hl--yellow { background: linear-gradient(transparent 52%, #f4e3a1 52%); }
+    .hl--blue { background: linear-gradient(transparent 52%, #cfe5f2 52%); }
+    .hl--green { background: linear-gradient(transparent 52%, #d6eab4 52%); }
+    .hl--purple { background: linear-gradient(transparent 52%, #e4d7f1 52%); }
     .target__msg { margin-top: 36px; text-align: center; font-family: var(--serif); font-size: clamp(1.05rem, 2.8vw, 1.25rem); color: var(--main-deep); line-height: 2; margin-bottom: 0; }
     .target__msg strong { color: var(--main); border-bottom: 2px solid var(--main); }
 
@@ -138,9 +157,10 @@
     .movie__frame .instagram-media { margin: 0 auto !important; min-width: 0 !important; width: 100% !important; border-radius: 16px !important; box-shadow: var(--shadow) !important; }
     .movie__fallback {
       display: grid; place-items: center; align-content: center; gap: 14px; aspect-ratio: 9 / 14; width: 100%;
-      border-radius: 16px; background: linear-gradient(160deg, var(--main) 0%, var(--main-deep) 100%);
+      border-radius: 16px; background: linear-gradient(rgba(10, 74, 79, .55), rgba(10, 74, 79, .72)), url("images/bg-cards.webp") center / cover no-repeat;
       color: var(--white) !important; text-decoration: none; text-align: center; padding: 24px;
     }
+    .movie__fallback span { text-shadow: 0 1px 8px rgba(0,0,0,.45); }
     .movie__play { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,.18); display: grid; place-items: center; }
     .movie__play svg { width: 30px; height: 30px; margin-left: 4px; }
     .movie__text .lead { margin-bottom: 1.6em; }
@@ -193,9 +213,11 @@
 
     /* ---------- About ---------- */
     .about__intro { display: grid; grid-template-columns: 260px 1fr; gap: 44px; align-items: center; margin-bottom: 48px; }
-    .about__intro img { border-radius: 20px; box-shadow: var(--shadow); }
+    .about__intro img { border-radius: 20px; box-shadow: var(--shadow); aspect-ratio: 720 / 760; object-fit: cover; }
     @media (max-width: 760px) { .about__intro { grid-template-columns: 1fr; gap: 24px; } .about__intro img { max-width: 240px; margin-inline: auto; } }
-    .about__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 64px; }
+    .about__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .deck__step { margin: 24px 0 0; padding-top: 18px; border-top: 1px dashed rgba(18, 131, 139, .3); font-size: .93rem; line-height: 1.9; }
+    .deck__step b { color: var(--main); font-size: 1.05em; }
     @media (max-width: 720px) { .about__cards { grid-template-columns: 1fr; } }
     .deck { background: var(--white); border-radius: 20px; padding: 32px 24px; box-shadow: var(--shadow); text-align: center; }
     .deck__label { font-size: .8rem; font-weight: 700; letter-spacing: .2em; color: var(--ink-soft); margin-bottom: .2em; }
@@ -211,12 +233,6 @@
       .mini-cards { gap: 6px; flex-wrap: nowrap; }
       .mini-cards .chip { width: 92px; min-width: 0; min-height: 62px; font-size: .8rem; }
     }
-    .flow__steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    @media (max-width: 860px) { .flow__steps { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 480px) { .flow__steps { grid-template-columns: 1fr; } }
-    .flow__steps li { background: var(--main); color: var(--white); border-radius: var(--radius); padding: 20px; font-size: .92rem; line-height: 1.75; }
-    .flow__steps li:nth-child(n+3) { background: var(--main-deep); }
-    .flow__steps b { display: block; font-size: .75rem; letter-spacing: .2em; opacity: .75; margin-bottom: .3em; }
 
     /* ---------- Experience ---------- */
     .exp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
@@ -276,11 +292,19 @@
     .plan li::before { content: ""; position: absolute; left: 0; top: .78em; width: 7px; height: 7px; border-radius: 50%; background: var(--main); }
 
     /* ---------- Contact ---------- */
-    .contact { background: linear-gradient(135deg, var(--main) 0%, var(--main-deep) 100%); color: var(--white); text-align: center; }
+    .contact {
+      background: linear-gradient(rgba(10, 74, 79, .62), rgba(10, 74, 79, .82)), url("images/bg-window.webp") center 35% / cover no-repeat;
+      color: var(--white); text-align: center;
+    }
     .contact .eyebrow { color: rgba(255,255,255,.8); }
     .contact .section-title { color: var(--white); }
     .contact p { color: rgba(255,255,255,.9); }
-    .contact__closing { font-family: var(--serif); line-height: 2.1; margin: 1.6em 0 2em; }
+    .contact__closing {
+      font-family: var(--serif); font-size: clamp(1rem, 2.6vw, 1.12rem); line-height: 2.2; letter-spacing: .08em; margin: 1.8em auto 2.2em;
+      max-width: 520px; padding: 2em 1.6em; border-radius: 28px;
+      background: rgba(205, 230, 240, .16); border: 1px solid rgba(255,255,255,.3);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
     .contact__box { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); border-radius: 20px; padding: 32px 24px; }
     .contact .btn { background: var(--white); color: var(--main-deep) !important; margin-top: .6em; box-shadow: 0 10px 28px rgba(0,0,0,.18); }
     .contact .btn:hover { background: var(--wood); }
@@ -293,6 +317,30 @@
     .footer__nav a:hover { text-decoration: underline; }
     .footer__nav svg { width: 18px; height: 18px; }
     .footer small { font-size: .75rem; opacity: .7; }
+
+    /* ---------- Hook (Instagram投稿1) ---------- */
+    .hook {
+      color: var(--white); text-align: center; padding: 128px 0;
+      background: linear-gradient(rgba(16, 38, 30, .62), rgba(16, 38, 30, .72)), url("images/bg-tree.webp") center 62% / cover no-repeat;
+    }
+    .hook__title { font-family: var(--serif); font-weight: 600; font-size: clamp(1.6rem, 5vw, 2.6rem); letter-spacing: .25em; margin: 0 0 1.3em; }
+    .hook__text { font-family: var(--serif); font-size: clamp(.98rem, 2.6vw, 1.15rem); line-height: 2.3; letter-spacing: .12em; color: rgba(255,255,255,.92); margin: 0 0 2.4em; }
+    .hook__answer {
+      display: inline-block; font-family: var(--serif); font-size: clamp(1rem, 2.8vw, 1.2rem); line-height: 2.2; letter-spacing: .08em;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); border-radius: 20px;
+      padding: 1.4em clamp(1.2em, 4vw, 2.4em); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    .hook__answer mark { background: #bfe0ea; color: var(--main-deep); padding: .1em .4em; border-radius: 4px; }
+    @media (max-width: 640px) { .hook { padding: 96px 0; } }
+
+    /* ---------- Price ---------- */
+    .price {
+      margin-top: 24px; background: var(--white); border: 2px solid var(--main); border-radius: 20px; padding: 24px 32px;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 28px; text-align: center;
+    }
+    .price__label { display: inline-block; background: var(--main); color: var(--white); font-size: .8rem; font-weight: 700; letter-spacing: .15em; padding: .2em 1em; border-radius: 999px; margin-right: .8em; vertical-align: middle; }
+    .price__value { font-family: var(--serif); font-weight: 600; font-size: 1.6rem; color: var(--main-deep); vertical-align: middle; }
+    .price p { margin: 0; color: var(--ink-soft); font-size: .95rem; }
 
     /* ---------- Fade-in ---------- */
     .reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s ease; }
@@ -352,21 +400,32 @@
       </div>
     </section>
 
+    <!-- Hook -->
+    <section class="hook" id="hook">
+      <div class="narrow">
+        <h2 class="hook__title reveal">また、本音に蓋をした。</h2>
+        <p class="hook__text reveal">「ちゃんとしなきゃ」って<br>一人で抱え込んで、頑張り続けて<br>気づいたらイライラが爆発して、<br>そんな自分にまた自己嫌悪。</p>
+        <p class="hook__answer reveal"><mark>『痛みと願いカード』</mark>は、<br>そんな自分に<br class="sp-only">ちゃんと気づいてあげる時間。<br>「ありのままの私でいい」と、<br class="sp-only">安心して話せる時間です。</p>
+      </div>
+    </section>
+
     <!-- Target -->
-    <section class="bg-white" id="target">
+    <section class="target" id="target">
       <div class="narrow">
         <div class="section-head reveal">
-          <span class="eyebrow">TARGET</span>
-          <h2 class="section-title">こんなお悩みはありませんか？</h2>
+          <span class="eyebrow">FOR YOU</span>
+          <h2 class="section-title">こんな人におすすめです</h2>
         </div>
-        <ul class="check-list">
-          <li class="reveal">「ちゃんとしなきゃ」と一人で抱え込み、頑張り続けている</li>
-          <li class="reveal">相手の顔色を先回りして読み、自己犠牲を重ねて疲れ果てている</li>
-          <li class="reveal">気持ちをわかられずに、気づいたらイライラや不安が爆発してしまい、自己嫌悪している</li>
-          <li class="reveal">無理に頑張らなくても「今の自分でいい」と丸ごと受け入れてもらえる、安心できる居場所が欲しい</li>
-          <li class="reveal">義務感からやるのをやめて、本当は自分がどうしたいかを感じて生きたい</li>
-        </ul>
-        <p class="target__msg reveal">もし一つでも当てはまるなら、<br><strong>このセッションはあなたのためのもの</strong>です。</p>
+        <div class="target__panel reveal">
+          <ul class="check-list">
+            <li>「ちゃんとしなきゃ」と、<span class="hl hl--pink">一人で抱え込みがちな方</span></li>
+            <li>周りの顔色を気にして、<span class="hl hl--yellow">つい本音を隠してしまう方</span></li>
+            <li>弱音を吐けず、<span class="hl hl--blue">いつも無理をして気を張っている方</span></li>
+            <li>頑張りすぎて、<span class="hl hl--green">気づくとイライラが爆発してしまう方</span></li>
+            <li>「ありのままの私でいい」と、<span class="hl hl--purple">ホッと安心できる時間がほしい方</span></li>
+          </ul>
+          <p class="target__msg">もし一つでも当てはまるなら、<br><strong>このセッションは<br class="sp-only">あなたのためのもの</strong>です。</p>
+        </div>
       </div>
     </section>
 
@@ -455,8 +514,8 @@
 
         <div class="about__intro reveal">
           <picture>
-            <source srcset="images/deck.webp" type="image/webp">
-            <img src="images/deck.jpg" width="390" height="340" alt="木のモチーフが描かれた痛みと願いカードのデッキ">
+            <source srcset="images/cards-spread.webp" type="image/webp">
+            <img src="images/cards-spread.jpg" width="720" height="760" alt="テーブルに並べられた痛みカードと願いカード、木のモチーフが描かれたカードデッキ">
           </picture>
           <div>
             <p>自分自身の痛みのシステムを知り、その裏側に隠されている「本当の願い（大切にしたいこと）」へとつながるための対話ツールです。</p>
@@ -474,6 +533,7 @@
               <span class="chip chip--pain">見下される</span>
               <span class="chip chip--pain">見捨てられる</span>
             </div>
+            <p class="deck__step"><b>まず</b>痛みカードで、自分がいつも感じるモヤモヤから<br class="pc-only">“痛みのシステム”を知ります。</p>
           </div>
           <div class="deck reveal">
             <p class="deck__label">WISH CARDS</p>
@@ -484,18 +544,10 @@
               <span class="chip chip--wish">つながり</span>
               <span class="chip chip--wish">活力</span>
             </div>
+            <p class="deck__step"><b>次に</b>願いカードで、蓋をしていた本音の奥にある<br class="pc-only">“本当の願い”が見えてきます。</p>
           </div>
         </div>
 
-        <div class="reveal">
-          <p class="sub-title">セッションの流れ</p>
-          <ol class="flow__steps">
-            <li><b>STEP 1</b>痛みカードから、「うっ」とくるカードを選ぶ</li>
-            <li><b>STEP 2</b>テーブルに並べ、自分の「痛みのシステム」を眺める</li>
-            <li><b>STEP 3</b>「その痛みがあっていい」と、ただ感じて受け入れる</li>
-            <li><b>STEP 4</b>願いカードを広げ、内側から湧き上がる「本当の願い」に出会う</li>
-          </ol>
-        </div>
       </div>
     </section>
 
@@ -666,6 +718,10 @@
             </ul>
           </article>
         </div>
+        <div class="price reveal">
+          <div><span class="price__label">料金</span><span class="price__value">60分 15,000円</span></div>
+          <p>個人セッション・グループ、どちらも承っています</p>
+        </div>
       </div>
     </section>
 
@@ -675,13 +731,16 @@
         <span class="eyebrow">BOOKING &amp; CONTACT</span>
         <h2 class="section-title">本来のあなたのまま、<br>願いを起点に生きる心地よさを</h2>
         <p class="contact__closing">
-          誰かになろうとしなくていい。<br>
-          木陰で休むように、静かな波の音を聴くように。<br>
-          あなたがあなた自身と深くつながれる時間を、<br class="pc-only">心から楽しみにしています。
+          頑張っていた肩の力がふっと抜けて<br>
+          「ありのままの私でいい」と<br>
+          初めて思える。<br><br>
+          「ちゃんとしなきゃ」じゃなくて<br>
+          「本当はどうしたいか」を<br>
+          感じて生きてみませんか。
         </p>
         <div class="contact__box">
           <p style="font-weight:700; margin-bottom:.4em;">ご予約・お問い合わせ</p>
-          <p style="font-size:.92rem;">個別セッションのご予約や、リトリートへの導入相談など<br class="pc-only">お気軽にInstagramのDMからご連絡ください。</p>
+          <p style="font-size:.92rem;">個人・グループセッションのご予約や、リトリートへの導入相談など<br class="pc-only">お気軽にInstagramのDMからご連絡ください。</p>
           <a href="https://www.instagram.com/takeshi.uchida.5203/" class="btn" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
             InstagramのDMで連絡する
