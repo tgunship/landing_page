@@ -12,7 +12,8 @@ index.html        … LP本体（HTML / CSS / JS を1ファイルに集約）
 images/hero.jpg   … メインビジュアル
 images/hero.webp  … メインビジュアル（WebP版）
 images/ogp.jpg    … SNSシェア用画像（1200px幅）
-images/deck.jpg   … カードデッキの切り抜き（カード紹介・プロフィール用、webp版あり）
+images/deck.jpg   … カードデッキの切り抜き（カード紹介用、webp版あり）
+images/profile.jpg … ナビゲーターのプロフィール写真（webp版あり）
 ```
 
 ビルド不要です。`index.html` をブラウザで開けば表示できます。
