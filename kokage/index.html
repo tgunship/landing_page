@@ -222,6 +222,7 @@
           shareDeclared: $('#f-share') ? $('#f-share').checked : false
         });
         const sent = await sendTrigger(res.triggerText);
+        if (!sent) api('triggerFailed', { eventId: ev.id, kind: 'apply' }).catch(() => {});
         $('#apply-body').innerHTML = `
           <div class="done">
             <div class="leaf">🌿</div>
@@ -247,7 +248,7 @@
       if (!ev || !confirm(`『${ev.title}』（${ev.dateLabel}）をキャンセルしますか？`)) return;
       try {
         const res = await api('cancel', { eventId: id });
-        await sendTrigger(res.triggerText);
+        if (!(await sendTrigger(res.triggerText))) api('triggerFailed', { eventId: id, kind: 'cancel' }).catch(() => {});
         if (res.feeChanges && res.feeChanges.length) {
           alert('キャンセルしました。\n\nお申し込み中の次の木陰は、はじめての方の料金になりました。\n' +
             res.feeChanges.map((c) => `・${c.dateLabel}『${c.title}』${yen(c.fee)}`).join('\n'));

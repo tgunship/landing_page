@@ -123,7 +123,13 @@ test('日付・時刻の整形', () => {
   assert.equal(L.formatYen(6500), '6,500円');
 });
 
-test('トリガーメッセージの往復', () => {
+test('トリガーメッセージ：受信箱で読める内容＋往復', () => {
+  const ev = { title: 'キャンセルしたくなる私の木陰', date: '2026-12-08', start_time: '13:00', status: '開催決定' };
+  const full = L.buildTriggerText('apply', 'E-AB12CD34', ev, { total: 5, guests: 3, members: 2 });
+  assert.match(full, /12月8日（火） 13:00〜『キャンセルしたくなる私の木陰』（開催決定済み）/);
+  assert.match(full, /合計5名（一般3名・仲間2名）/);
+  // タイトルに「キャンセル」が入っていても申込として読む
+  assert.deepEqual({ ...L.parseTriggerMessage(full) }, { kind: 'apply', eventId: 'E-AB12CD34' });
   const t = L.buildTriggerText('apply', 'E-AB12CD34');
   assert.deepEqual({ ...L.parseTriggerMessage(t) }, { kind: 'apply', eventId: 'E-AB12CD34' });
   const c = L.buildTriggerText('cancel', 'E-AB12CD34');

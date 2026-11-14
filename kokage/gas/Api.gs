@@ -41,6 +41,7 @@ function handleApi_(body) {
     case 'cancel': return withLock_(function () { return apiCancel_(ctx, body); });
     case 'request': return apiRequest_(ctx, body);
     case 'status': return apiStatus_(ctx);
+    case 'triggerFailed': return apiTriggerFailed_(ctx, body);
   }
 
   if (!isAdmin(ctx.userId)) throw new Error('運営メンバーのみが使える機能です');
@@ -169,13 +170,14 @@ function apiApply_(ctx, body) {
   }
 
   // 開催決定後の追加申込は、運営とホストへお知らせ（会場予約の人数が変わるため）
-  if (ev.status === EVENT_STATUS.GO) notifyChange_('apply', ev, ctx.name, regTable.all());
+  var afterApply = countParticipants(ev.event_id, regTable.all());
+  if (ev.status === EVENT_STATUS.GO) notifyHost_('apply', ev, ctx.name, afterApply);
 
   return {
     ok: true,
     fee: fee,
     type: type,
-    triggerText: buildTriggerText('apply', ev.event_id),
+    triggerText: buildTriggerText('apply', ev.event_id, ev, afterApply),
     instagramUrl: cfg.INSTAGRAM_URL
   };
 }
@@ -197,12 +199,32 @@ function apiCancel_(ctx, body) {
   // キャンセルした回が「初回」だった場合、次の申込を自動で初回料金に戻す
   var changes = recomputeFirstTime_([ctx.userId]);
 
-  if (ev.status === EVENT_STATUS.GO) notifyChange_('cancel', ev, ctx.name, regTable.all());
+  var afterCancel = countParticipants(ev.event_id, regTable.all());
+  if (ev.status === EVENT_STATUS.GO) notifyHost_('cancel', ev, ctx.name, afterCancel);
   return {
     ok: true,
-    triggerText: buildTriggerText('cancel', ev.event_id),
+    triggerText: buildTriggerText('cancel', ev.event_id, ev, afterCancel),
     feeChanges: changes.map(function (c) { return { title: c.event.title, dateLabel: formatJpDate(c.event.date), fee: c.fee }; })
   };
+}
+
+/**
+ * LINEアプリの外（パソコンのブラウザ等）で申し込んだため、合図のメッセージを公式LINEへ送れなかったとき。
+ * 開催決定済みの回だけは会場予約に関わるので、運営へ Push で知らせる（めったに起きない）。
+ */
+function apiTriggerFailed_(ctx, body) {
+  var ev = table_('events').all().filter(function (e) { return e.event_id === body.eventId; })[0];
+  if (!ev || ev.status !== EVENT_STATUS.GO) return { ok: true, notified: false };
+  var kind = body.kind === 'cancel' ? 'cancel' : 'apply';
+  var regs = table_('registrations').all();
+  var mine = regs.filter(function (r) {
+    return r.event_id === ev.event_id && r.line_user_id === ctx.userId &&
+      r.status === (kind === 'cancel' ? REG_STATUS.CANCELLED : REG_STATUS.ACTIVE);
+  })[0];
+  if (!mine) return { ok: true, notified: false };
+  pushToAdmins_(buildAdminChangeMessage(kind, ev, ctx.name, countParticipants(ev.event_id, regs), false),
+    { kind: kind === 'cancel' ? '管理者:キャンセル' : '管理者:追加申込', eventId: ev.event_id });
+  return { ok: true, notified: true };
 }
 
 function apiRequest_(ctx, body) {
@@ -221,11 +243,12 @@ function callName_(u) {
   return (u && (u.nickname || u.display_name)) || '';
 }
 
-/** 開催決定後の追加申込・キャンセルを、運営とホスト（LQメンバーの場合）へ Push */
-function notifyChange_(kind, ev, name, regs) {
-  var counts = countParticipants(ev.event_id, regs);
-  pushToAdmins_(buildAdminChangeMessage(kind, ev, name, counts, false),
-    { kind: kind === 'cancel' ? '管理者:キャンセル' : '管理者:追加申込', eventId: ev.event_id });
+/**
+ * 開催決定後の追加申込・キャンセルを、ホスト（LQメンバーの場合）へ Push。
+ * 運営へは Push しない：参加者のトークから公式LINEへ届く合図のメッセージ（日付・タイトル・人数入り）を
+ * 公式LINEの受信箱で確認する（無料）。
+ */
+function notifyHost_(kind, ev, name, counts) {
   if (ev.host_user_id && !isAdmin(ev.host_user_id)) {
     push_(ev.host_user_id, buildAdminChangeMessage(kind, ev, name, counts, true),
       { kind: kind === 'cancel' ? 'ホスト:キャンセル' : 'ホスト:追加申込', eventId: ev.event_id, name: ev.host_name });

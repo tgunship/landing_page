@@ -216,14 +216,24 @@ function formatYen(n) {
  * LIFF の liff.sendMessages() で利用者のトークから送られる合図のメッセージ。
  * これを Webhook で受け取り、無料の Reply API で返信する。
  */
-function buildTriggerText(kind, eventId) {
-  return kind === 'cancel'
-    ? '【木陰】キャンセルしました #' + eventId
-    : '【木陰】申し込みました #' + eventId;
+/**
+ * 参加者のトークから公式LINEへ送られる合図のメッセージ。
+ * 公式LINEの受信箱（LINE Official Account Manager のチャット）にそのまま並ぶので、
+ * 運営はここで申込・キャンセルと現在の人数を無料で確認できる。
+ */
+function buildTriggerText(kind, eventId, ev, counts) {
+  var lines = [kind === 'cancel' ? '【木陰】キャンセルしました #' + eventId : '【木陰】申し込みました #' + eventId];
+  if (ev) {
+    lines.push(formatJpDate(ev.date) + ' ' + ev.start_time + '〜『' + ev.title + '』' + (ev.status === EVENT_STATUS.GO ? '（開催決定済み）' : ''));
+  }
+  if (counts) {
+    lines.push('いまの申込：合計' + counts.total + '名（一般' + counts.guests + '名・仲間' + counts.members + '名）');
+  }
+  return lines.join('\n');
 }
 
 function parseTriggerMessage(text) {
-  var s = String(text || '');
+  var s = String(text || '').split('\n')[0]; // 1行目だけを見る（タイトルの文字に影響されないように）
   if (s.indexOf('【木陰】') !== 0) return null;
   var m = s.match(/#(E-[A-Za-z0-9]+)/);
   if (!m) return null;
