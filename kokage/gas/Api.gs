@@ -120,6 +120,7 @@ function apiInit_(ctx) {
 function apiApply_(ctx, body) {
   var cfg = getConfig();
   var now = new Date();
+  if (isAdmin(ctx.userId)) throw new Error('運営の方は申し込み不要です（人数に数えません）');
   if (!body.agreed) throw new Error('木陰のグランドルールへの同意が必要です');
 
   var evTable = table_('events');
@@ -167,7 +168,7 @@ function apiApply_(ctx, body) {
     regTable.append(reg);
   }
 
-  // 開催決定後の追加申込は、運営3名とホストへお知らせ（会場予約の人数が変わるため）
+  // 開催決定後の追加申込は、運営とホストへお知らせ（会場予約の人数が変わるため）
   if (ev.status === EVENT_STATUS.GO) notifyChange_('apply', ev, ctx.name, regTable.all());
 
   return {
@@ -215,9 +216,12 @@ function apiRequest_(ctx, body) {
 
 // ---------- 運営向け ----------
 
-var OWNER_HOST = '__owner__';
+/** 名簿上の呼び名（あれば）→ LINEの表示名 */
+function callName_(u) {
+  return (u && (u.nickname || u.display_name)) || '';
+}
 
-/** 開催決定後の追加申込・キャンセルを、運営3名とホスト（LQメンバーの場合）へ Push */
+/** 開催決定後の追加申込・キャンセルを、運営とホスト（LQメンバーの場合）へ Push */
 function notifyChange_(kind, ev, name, regs) {
   var counts = countParticipants(ev.event_id, regs);
   pushToAdmins_(buildAdminChangeMessage(kind, ev, name, counts, false),
@@ -270,17 +274,19 @@ function apiAdminOverview_(ctx) {
   var events = table_('events').all();
   var regs = table_('registrations').all();
   var users = table_('users').all();
-  var hosts = users
+  // ホスト候補：運営（費用なし・数えない）を先頭に、LQメンバー・IQ受講生
+  var staff = users.filter(function (u) { return isAdmin(u.line_user_id); })
+    .sort(function (a, b) { return (b.line_user_id === ctx.userId) - (a.line_user_id === ctx.userId); })
+    .map(function (u) { return { id: u.line_user_id, name: callName_(u), role: '運営', staff: true }; });
+  var hosts = staff.concat(users
     .filter(function (u) {
-      if (isOwner(u.line_user_id)) return false;
+      if (isAdmin(u.line_user_id)) return false;
       var r = normalizeRole(u.role);
-      return r === ROLE.MEMBER || r === ROLE.IQ || isAdmin(u.line_user_id);
+      return r === ROLE.MEMBER || r === ROLE.IQ;
     })
     .map(function (u) {
-      var r = normalizeRole(u.role);
-      var label = r === ROLE.GUEST ? '運営' : ROLE_LABEL[r] + (isAdmin(u.line_user_id) ? '・運営' : '');
-      return { id: u.line_user_id, name: u.display_name, role: label };
-    });
+      return { id: u.line_user_id, name: callName_(u), role: ROLE_LABEL[normalizeRole(u.role)], staff: false };
+    }));
 
   var list = events
     .sort(function (a, b) { return (eventStart(b) || 0) - (eventStart(a) || 0); })
@@ -289,7 +295,7 @@ function apiAdminOverview_(ctx) {
       var base = publicEvent_(ev, regs, '');
       var decision = decisionTimeOf(ev, cfg);
       base.decisionLabel = decision ? Utilities.formatDate(decision, 'Asia/Tokyo', 'M/d HH:mm') : '';
-      base.hostId = ev.host_user_id || (ev.host_name ? OWNER_HOST : '');
+      base.hostId = ev.host_user_id;
       base.caption = ev.caption;
       base.rawIdea = ev.raw_idea;
       base.sourceEventId = ev.source_event_id;
@@ -311,7 +317,7 @@ function apiAdminOverview_(ctx) {
 
   return {
     ok: true,
-    me: { name: ctx.name },
+    me: { name: ctx.name, id: ctx.userId },
     config: {
       minTotal: cfg.MIN_TOTAL_PARTICIPANTS, minGuest: cfg.MIN_GUEST_PARTICIPANTS,
       daysBefore: cfg.GO_NOGO_DAYS_BEFORE, hour: cfg.GO_NOGO_HOUR, duration: cfg.EVENT_DURATION_HOURS,
@@ -323,8 +329,6 @@ function apiAdminOverview_(ctx) {
     pushLimit: cfg.PUSH_MONTHLY_LIMIT,
     spreadsheetUrl: getSpreadsheet_().getUrl(),
     hosts: hosts,
-    ownerHost: OWNER_HOST,
-    ownerName: cfg.OWNER_NAME,
     events: list,
     requests: requests
   };
@@ -369,19 +373,14 @@ function apiAdminCreate_(ctx, body) {
     throw new Error('開催判定（' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時）がすでに過ぎている日付です。もっと先の日付を選んでください。');
   }
 
-  var host = null;
-  if (body.hostId === OWNER_HOST || isOwner(body.hostId)) {
-    // うってぃがホスト：参加費・場所代なし。参加者として登録しない（人数にも数えない）
-    ev.host_name = cfg.OWNER_NAME;
-  } else if (body.hostId) {
-    // LQメンバー・IQ受講生・うってぃ以外の運営がホスト：場所代500円で参加者として登録
-    host = findUser_(body.hostId);
-    if (!host) throw new Error('ホストが名簿に見つかりません');
-    ev.host_user_id = host.line_user_id;
-    ev.host_name = host.display_name;
-  } else {
-    throw new Error('ホストを選んでください');
-  }
+  if (!body.hostId) throw new Error('ホストを選んでください');
+  var hostUser = findUser_(body.hostId);
+  if (!hostUser) throw new Error('ホストが名簿に見つかりません');
+  ev.host_user_id = hostUser.line_user_id;
+  ev.host_name = callName_(hostUser);
+  // 運営（うってぃ・ぎっしー）がホスト：費用なし・申込シートに登録しない・人数に数えない
+  // LQメンバー・IQ受講生がホスト：場所代500円で参加者として登録
+  var host = isAdmin(hostUser.line_user_id) ? null : hostUser;
 
   var evTable = table_('events');
   evTable.append(ev);
@@ -391,7 +390,7 @@ function apiAdminCreate_(ctx, body) {
     var fee = calcFee({ role: role === ROLE.GUEST ? ROLE.MEMBER : role, isFirstTime: false, shareDeclared: false }, cfg);
     table_('registrations').append({
       reg_id: newId_('R'), event_id: ev.event_id, event_title: ev.title, event_date: ev.date,
-      line_user_id: host.line_user_id, display_name: host.display_name, type: REG_TYPE.HOST,
+      line_user_id: host.line_user_id, display_name: callName_(host), type: REG_TYPE.HOST,
       first_time: '', share_declared: boolLabel(false), referrer: '', agreed_rules: boolLabel(true),
       fee: fee.total, status: REG_STATUS.ACTIVE, created_at: nowStamp_(), cancelled_at: ''
     });

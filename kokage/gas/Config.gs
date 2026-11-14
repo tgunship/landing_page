@@ -24,9 +24,7 @@ var DEFAULT_CONFIG = {
   INSTAGRAM_URL: 'https://www.instagram.com/kokochi1205/',
   INSTAGRAM_HANDLE: '@kokochi1205',
   // 参加者向け画面（GitHub Pages）。LIFF の URL が設定されていればそちらを優先して案内に使う
-  PAGE_URL: 'https://tgunship.github.io/landing_page/kokage/',
-  // 費用なしでホストできるのは主宰（うってぃ）だけ。表示名。
-  OWNER_NAME: 'うってぃ'
+  PAGE_URL: 'https://tgunship.github.io/landing_page/kokage/'
 };
 
 var NUMERIC_KEYS = [
@@ -45,7 +43,7 @@ function getConfig() {
   NUMERIC_KEYS.forEach(function (k) {
     if (props[k] !== undefined && props[k] !== '' && !isNaN(Number(props[k]))) cfg[k] = Number(props[k]);
   });
-  ['DEFAULT_VENUE', 'DEFAULT_START_TIME', 'INSTAGRAM_URL', 'INSTAGRAM_HANDLE', 'PAGE_URL', 'OWNER_NAME'].forEach(function (k) {
+  ['DEFAULT_VENUE', 'DEFAULT_START_TIME', 'INSTAGRAM_URL', 'INSTAGRAM_HANDLE', 'PAGE_URL'].forEach(function (k) {
     if (props[k]) cfg[k] = props[k];
   });
   _cfgCache = cfg;
@@ -62,11 +60,10 @@ function adminIds() {
   return prop('ADMIN_LINE_USER_IDS').split(/[,\s]+/).filter(function (s) { return s; });
 }
 
-/** 主宰（うってぃ）の LINE ユーザーID（スクリプト プロパティ OWNER_LINE_USER_ID） */
-function isOwner(userId) {
-  return !!userId && userId === prop('OWNER_LINE_USER_ID');
-}
-
+/**
+ * 運営（うってぃ・ぎっしー）。ADMIN_LINE_USER_IDS に入っている人。
+ * 運営は申込シートに登録せず、人数にも数えず、費用もかからない。管理者通知が届く。
+ */
 function isAdmin(userId) {
   return adminIds().indexOf(userId) >= 0;
 }

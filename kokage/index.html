@@ -79,6 +79,8 @@
         action = opts.mine
           ? `<button class="btn danger block" data-cancel="${esc(ev.id)}">キャンセルする</button>`
           : `<p class="hint">お申し込み済みです（当日のお支払い：${yen(ev.mine.fee)}）</p>`;
+      } else if (state.data.me.isAdmin) {
+        action = '<p class="hint">運営の方は申し込み不要です（人数に数えません）。</p>';
       } else if (!ev.canApply) {
         action = '<button class="btn block" disabled>募集は締め切りました</button>';
       } else if (full) {

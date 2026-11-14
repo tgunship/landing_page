@@ -12,6 +12,7 @@ var TABLES = {
       ['line_user_id', 'LINEユーザーID'],
       ['display_name', '表示名'],
       ['role', '区分'],
+      ['nickname', '呼び名'],
       ['memo', 'メモ'],
       ['created_at', '登録日時'],
       ['updated_at', '更新日時']
@@ -195,6 +196,7 @@ function upsertUser_(userId, displayName) {
     line_user_id: userId,
     display_name: displayName || '',
     role: ROLE_LABEL.guest,
+    nickname: '',
     memo: '',
     created_at: nowStamp_(),
     updated_at: nowStamp_()
