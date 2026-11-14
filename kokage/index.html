@@ -90,7 +90,7 @@
       }
       return `
         <article class="card" id="ev-${esc(ev.id)}">
-          <div class="badges">${statusBadge(ev)}${ev.mine ? '<span class="badge mine">申込済み</span>' : ''}</div>
+          <div class="badges">${statusBadge(ev)}${ev.format !== 'other' && ev.formatLabel ? `<span class="badge">${esc(ev.formatLabel)}</span>` : ''}${ev.mine ? '<span class="badge mine">申込済み</span>' : ''}</div>
           <h3>${esc(ev.title)}</h3>
           <div class="meta">
             <div>📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}</div>
@@ -98,6 +98,7 @@
             ${ev.host ? `<div>🌿 ホスト：${esc(ev.host)}</div>` : ''}
           </div>
           <p class="desc">${esc(ev.description)}</p>
+          ${ev.workLine ? `<p class="hint" style="margin:-4px 0 12px">${esc(ev.workLine)}</p>` : ''}
           ${ev.status === '募集中' ? `<p class="hint" style="margin:-4px 0 8px">開催判定：${esc(ev.decisionLabel)}（開催が決まったら、当日の開始まで申し込めます）</p>` : ''}
           <div class="counts">いまの申込：はじめての方・一般 ${c.guests}名 ／ 仲間 ${c.members}名　（残り${ev.remaining}席）</div>
           ${ev.mine && opts.mine ? `<p class="hint" style="margin-bottom:10px">当日のお支払い：${yen(ev.mine.fee)}</p>` : ''}

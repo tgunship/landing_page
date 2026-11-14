@@ -26,6 +26,8 @@ var TABLES = {
       ['date', '開催日'],
       ['start_time', '開始'],
       ['end_time', '終了'],
+      ['format', '型'],
+      ['work_title', '作品名（本・映画）'],
       ['title', 'タイトル'],
       ['description', '案内文'],
       ['caption', 'インスタ投稿文'],

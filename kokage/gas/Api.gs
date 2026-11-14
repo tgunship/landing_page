@@ -78,6 +78,10 @@ function publicEvent_(ev, regs, userId) {
     end: ev.end_time,
     title: ev.title,
     description: ev.description,
+    format: (findFormat(ev.format) || {}).key || 'other',
+    formatLabel: (findFormat(ev.format) || {}).label || '',
+    workTitle: ev.work_title,
+    workLine: workLine(ev),
     venue: ev.venue,
     host: ev.host_name,
     max: max,
@@ -177,7 +181,7 @@ function apiApply_(ctx, body) {
     ok: true,
     fee: fee,
     type: type,
-    triggerText: buildTriggerText('apply', ev.event_id, ev, afterApply),
+    triggerText: buildTriggerText('apply', ev.event_id, ev),
     instagramUrl: cfg.INSTAGRAM_URL
   };
 }
@@ -203,7 +207,7 @@ function apiCancel_(ctx, body) {
   if (ev.status === EVENT_STATUS.GO) notifyHost_('cancel', ev, ctx.name, afterCancel);
   return {
     ok: true,
-    triggerText: buildTriggerText('cancel', ev.event_id, ev, afterCancel),
+    triggerText: buildTriggerText('cancel', ev.event_id, ev),
     feeChanges: changes.map(function (c) { return { title: c.event.title, dateLabel: formatJpDate(c.event.date), fee: c.fee }; })
   };
 }
@@ -352,6 +356,7 @@ function apiAdminOverview_(ctx) {
     pushLimit: cfg.PUSH_MONTHLY_LIMIT,
     spreadsheetUrl: getSpreadsheet_().getUrl(),
     hosts: hosts,
+    formats: FORMATS.map(function (f) { return { key: f.key, label: f.label, work: f.work }; }),
     events: list,
     requests: requests
   };
@@ -368,6 +373,9 @@ function apiAdminCreate_(ctx, body) {
   if (!date || !start) throw new Error('開催日と開始時間を入力してください');
   if (!title || !description) throw new Error('タイトルと案内文を入力してください');
   if (!venue) throw new Error('場所を入力してください');
+  var fmt = findFormat(body.format);
+  if (!fmt) throw new Error('型を選んでください');
+  if (fmt.work && fmt.work.required && !String(body.workTitle || '').trim()) throw new Error(fmt.work.label + 'を入力してください');
   if (max < cfg.MIN_TOTAL_PARTICIPANTS) throw new Error('定員は最小催行人数（' + cfg.MIN_TOTAL_PARTICIPANTS + '名）以上にしてください');
 
   var ev = {
@@ -380,6 +388,8 @@ function apiAdminCreate_(ctx, body) {
     description: description,
     caption: String(body.caption || ''),
     raw_idea: String(body.idea || ''),
+    format: (findFormat(body.format) || FORMATS[FORMATS.length - 1]).label,
+    work_title: String(body.workTitle || '').trim(),
     venue: venue,
     max_participants: max,
     host_user_id: '',

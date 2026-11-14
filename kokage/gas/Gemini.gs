@@ -29,6 +29,12 @@ function generateCopy_(input) {
     '  "caption": "Instagram投稿の本文（全角150〜300文字、改行あり、ハッシュタグは書かない）"',
     '}',
     '',
+    (function () {
+      var f = findFormat(input.format);
+      if (!f) return '';
+      return '# この回の型：' + f.label + '\n' + f.guide + (input.workTitle ? '\n取り上げる作品：『' + input.workTitle + '』' : '') +
+        '\n（型の名前や進め方の雰囲気が、読む人に自然に伝わるように書いてください。時間割の細かな説明は不要です）\n';
+    })(),
     '# 企画の想い',
     String(input.idea || '').slice(0, 3000),
     input.hostName ? '\n# ホスト\n' + input.hostName : ''

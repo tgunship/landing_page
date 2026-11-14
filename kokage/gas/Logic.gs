@@ -12,6 +12,55 @@ var REG_TYPE = { HOST: 'ホスト', MEMBER: 'LQメンバー', IQ: 'IQ受講生',
 var EVENT_STATUS = { OPEN: '募集中', GO: '開催決定', CANCELLED: '中止', DONE: '終了' };
 var REG_STATUS = { ACTIVE: '申込', CANCELLED: 'キャンセル' };
 
+/**
+ * 木陰の型（フォーマット）。スプレッドシートの「型」列には label が入る。
+ * guide は Gemini が文章を書くときの説明。work は作品名（本・映画）の扱い。
+ */
+var FORMATS = [
+  {
+    key: 'empathy', label: '共感セッション',
+    guide: 'ホスト（ライフクエストのメンバー）がいま抱えている悩み・痛みを起点にする場。チェックインのあと、ホスト→共鳴した参加者の順に、ひとり20〜30分の紐解きセッションを2〜3人行う。セッションのあとは全員がニーズ（願い）カードを1枚選び、一言書いて話した人に贈る。アドバイスはせず、聴くこと・共鳴することで、自分の番が来なかった人も自分の内面に触れられる。最後にチェックアウト、残りはフリートーク。',
+    work: null
+  },
+  {
+    key: 'workshop', label: '自己理解ワークショップ',
+    guide: '『メンタルモデルワークブック』やインナークエストのワーク（紐解き以外）を、みんなでやってみる場。枠組みがあるので、安心して自分の内面を客観的に眺められる。',
+    work: null
+  },
+  {
+    key: 'reading', label: '読書会',
+    guide: '1冊の本を真ん中に置き、順番に声に出して回し読みする（30分・1章くらい）。本は持っていなくてよく、手ぶらで参加できる。読んだあと、感じたことをシェアして対話する。',
+    work: { label: '本のタイトル', required: false }
+  },
+  {
+    key: 'movie', label: '映画シェア会',
+    guide: '同じ映画を事前に観てきて、感じたこと・心が動いたところをシェアして対話する。感想を語るうちに、自分の内側（大切にしていること・痛み・願い）が見えてくる。',
+    work: { label: '映画のタイトル', required: true }
+  },
+  {
+    key: 'other', label: 'その他',
+    guide: '型にとらわれない自由な企画（海辺の散歩、お茶を飲みながら話す会など）。',
+    work: null
+  }
+];
+
+function findFormat(value) {
+  var s = String(value || '').trim();
+  for (var i = 0; i < FORMATS.length; i++) {
+    if (FORMATS[i].key === s || FORMATS[i].label === s) return FORMATS[i];
+  }
+  return null;
+}
+
+/** 作品名の案内（読書会・映画シェア会） */
+function workLine(ev) {
+  var f = findFormat(ev.format);
+  if (!f || !ev.work_title) return '';
+  if (f.key === 'movie') return '🎬 映画『' + ev.work_title + '』を事前に観てきてください';
+  if (f.key === 'reading') return '📖 本『' + ev.work_title + '』（回し読みするので、持っていなくて大丈夫です）';
+  return '';
+}
+
 /** スプレッドシートの「区分」セルを内部ロールへ。表記ゆれを許容する。 */
 function normalizeRole(value) {
   var s = String(value || '').trim().toLowerCase();
@@ -221,13 +270,10 @@ function formatYen(n) {
  * 公式LINEの受信箱（LINE Official Account Manager のチャット）にそのまま並ぶので、
  * 運営はここで申込・キャンセルと現在の人数を無料で確認できる。
  */
-function buildTriggerText(kind, eventId, ev, counts) {
+function buildTriggerText(kind, eventId, ev) {
   var lines = [kind === 'cancel' ? '【木陰】キャンセルしました #' + eventId : '【木陰】申し込みました #' + eventId];
   if (ev) {
     lines.push(formatJpDate(ev.date) + ' ' + ev.start_time + '〜『' + ev.title + '』' + (ev.status === EVENT_STATUS.GO ? '（開催決定済み）' : ''));
-  }
-  if (counts) {
-    lines.push('いまの申込：合計' + counts.total + '名（一般' + counts.guests + '名・仲間' + counts.members + '名）');
   }
   return lines.join('\n');
 }
@@ -245,10 +291,15 @@ function parseTriggerMessage(text) {
 // ---------- メッセージ文面 ----------
 
 function eventLines(ev) {
-  return [
+  var lines = [
     '📅 ' + formatJpDate(ev.date) + ' ' + ev.start_time + '〜' + ev.end_time,
     '📍 ' + ev.venue
-  ].join('\n');
+  ];
+  var f = findFormat(ev.format);
+  if (f && f.key !== 'other') lines.unshift('🌿 ' + f.label);
+  var w = workLine(ev);
+  if (w) lines.push(w);
+  return lines.join('\n');
 }
 
 function feeLines(reg, cfg) {
@@ -401,6 +452,7 @@ function buildRevengeMessage(name, newEv, link) {
 // Node.js（テスト）から読み込めるようにする
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    FORMATS: FORMATS, findFormat: findFormat, workLine: workLine, eventLines: eventLines,
     ROLE: ROLE, ROLE_LABEL: ROLE_LABEL, REG_TYPE: REG_TYPE, EVENT_STATUS: EVENT_STATUS, REG_STATUS: REG_STATUS,
     normalizeRole: normalizeRole, regTypeForRole: regTypeForRole, isGuestType: isGuestType, toBool: toBool,
     calcFee: calcFee, isFirstTimeGuest: isFirstTimeGuest, countParticipants: countParticipants, isGo: isGo,

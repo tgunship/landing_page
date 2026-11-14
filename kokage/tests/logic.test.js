@@ -125,9 +125,9 @@ test('日付・時刻の整形', () => {
 
 test('トリガーメッセージ：受信箱で読める内容＋往復', () => {
   const ev = { title: 'キャンセルしたくなる私の木陰', date: '2026-12-08', start_time: '13:00', status: '開催決定' };
-  const full = L.buildTriggerText('apply', 'E-AB12CD34', ev, { total: 5, guests: 3, members: 2 });
+  const full = L.buildTriggerText('apply', 'E-AB12CD34', ev);
   assert.match(full, /12月8日（火） 13:00〜『キャンセルしたくなる私の木陰』（開催決定済み）/);
-  assert.match(full, /合計5名（一般3名・仲間2名）/);
+  assert.doesNotMatch(full, /名/); // 参加者本人のトークにも残るので人数は載せない
   // タイトルに「キャンセル」が入っていても申込として読む
   assert.deepEqual({ ...L.parseTriggerMessage(full) }, { kind: 'apply', eventId: 'E-AB12CD34' });
   const t = L.buildTriggerText('apply', 'E-AB12CD34');
@@ -145,4 +145,15 @@ test('申込返信メッセージに料金内訳が入る', () => {
   assert.match(text, /初回/);
   assert.match(text, /発信・口コミ割引1,000円/);
   assert.match(text, /3日前の12時/);
+});
+
+test('型：表記から探せる・作品名の案内', () => {
+  assert.equal(L.findFormat('共感セッション').key, 'empathy');
+  assert.equal(L.findFormat('movie').label, '映画シェア会');
+  assert.equal(L.findFormat('なにか'), null);
+  assert.match(L.workLine({ format: '映画シェア会', work_title: 'ちひろさん' }), /映画『ちひろさん』を事前に観て/);
+  assert.match(L.workLine({ format: '読書会', work_title: '本' }), /持っていなくて大丈夫/);
+  assert.equal(L.workLine({ format: '共感セッション', work_title: 'x' }), '');
+  const lines = L.eventLines({ format: '読書会', work_title: '本', date: '2026-12-08', start_time: '13:00', end_time: '16:00', venue: 'v' });
+  assert.match(lines, /^🌿 読書会/);
 });

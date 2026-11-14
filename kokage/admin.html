@@ -72,7 +72,7 @@
 
     function blankForm() {
       const c = S.data.config;
-      return { hostId: S.data.me.id, idea: '', date: '', start: c.start, venue: c.venue, max: c.max, title: '', description: '', body: '', sourceEventId: '', sourceTitle: '' };
+      return { hostId: S.data.me.id, format: '', workTitle: '', idea: '', date: '', start: c.start, venue: c.venue, max: c.max, title: '', description: '', body: '', sourceEventId: '', sourceTitle: '' };
     }
 
     function captionInfo(f) {
@@ -80,7 +80,8 @@
       const end = addHours(f.start, c.duration);
       return [
         '──────────',
-        `🌿 木陰『${f.title || ''}』`,
+        `🌿 木陰${fmtOf(f) && fmtOf(f).key !== 'other' ? '｜' + fmtOf(f).label : ''}『${f.title || ''}』`,
+        ...(workCaption(f) ? [workCaption(f)] : []),
         `📅 ${dateLabel(f.date)} ${f.start}〜${end}`,
         `📍 ${f.venue}`,
         `💴 はじめての方 ${yen(c.fees.first + c.fees.venue)}／2回目以降 ${yen(c.fees.regular + c.fees.venue)}（場所代${yen(c.fees.venue)}込み）`,
@@ -92,6 +93,13 @@
         '',
         '#木陰 #ここち #内面探求 #自己理解 #痛みと願いカード #ひたちなか #イバフォルニアベース'
       ].join('\n');
+    }
+    function fmtOf(f) { return S.data.formats.find((x) => x.key === f.format) || null; }
+    function workCaption(f) {
+      if (!f.workTitle) return '';
+      if (f.format === 'movie') return `🎬 映画『${f.workTitle}』を事前に観てきてください`;
+      if (f.format === 'reading') return `📖 本『${f.workTitle}』を回し読みします（持っていなくてOK）`;
+      return '';
     }
     const fullCaption = (f) => (f.body ? f.body.trim() + '\n\n' : '') + captionInfo(f);
 
@@ -131,6 +139,13 @@
                 ${hosts.some((h) => !h.staff) ? '' : '<p class="hint">名簿の「区分」を「LQメンバー」にすると、ここに表示されます。</p>'}
               </label>
               <p class="hint" style="margin-top:-6px;margin-bottom:12px">${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは参加者として登録され、人数に数えます（場所代500円）。'}</p>
+              <label class="field"><span>型<span class="req">必須</span></span>
+                <select id="f-format">
+                  ${f.format ? '' : '<option value="" selected>選んでください</option>'}
+                  ${S.data.formats.map((x) => `<option value="${esc(x.key)}" ${x.key === f.format ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}
+                </select>
+              </label>
+              ${fmtOf(f) && fmtOf(f).work ? `<label class="field"><span>${esc(fmtOf(f).work.label)}${fmtOf(f).work.required ? '<span class="req">必須</span>' : '（任意）'}</span><input type="text" id="f-work" value="${esc(f.workTitle)}"></label>` : ''}
               <label class="field"><span>企画のテーマ・やりたいこと・想い<span class="req">必須</span></span>
                 <textarea id="f-idea" rows="6" placeholder="思いつくままに、たらたら書いてOK。例）人の目を気にして疲れちゃう人と、痛みと願いカードで自分の願いを見つける時間にしたい">${esc(f.idea)}</textarea></label>
               <div class="row">
@@ -197,6 +212,8 @@
       const f = S.form;
       f.hostId = $('#f-host').value;
       f.idea = $('#f-idea').value;
+      f.format = $('#f-format').value;
+      f.workTitle = $('#f-work') ? $('#f-work').value.trim() : '';
       f.date = $('#f-date').value;
       f.start = $('#f-start').value;
       f.venue = $('#f-venue').value.trim();
@@ -210,6 +227,8 @@
       const f = S.form;
       const miss = [];
       if (!f.hostId) miss.push(['#f-host', 'ホスト']);
+      if (!f.format) miss.push(['#f-format', '型']);
+      else if (fmtOf(f).work && fmtOf(f).work.required && !f.workTitle) miss.push(['#f-work', fmtOf(f).work.label]);
       if (!f.idea.trim()) miss.push(['#f-idea', '企画のテーマ・想い']);
       if (!f.date) miss.push(['#f-date', '開催日']);
       else if (f.date < minDate()) miss.push(['#f-date', `開催日（${S.data.config.daysBefore}日前の判定が過ぎない日付に）`]);
@@ -243,10 +262,19 @@
         await KokagePoster.draw($('#poster'), {
           format: S.format, bg,
           title: f.title || 'タイトル', description: f.description || '案内文がここに入ります',
+          kicker: posterKicker(f),
           dateLabel: f.date ? dateLabel(f.date) : '開催日', time: `${f.start}〜${addHours(f.start, S.data.config.duration)}`,
           venue: f.venue, handle: S.data.config.instagramHandle
         });
       }, 250);
+    }
+
+    function posterKicker(f) {
+      const x = fmtOf(f);
+      if (!x || x.key === 'other') return '';
+      if (f.workTitle && x.key === 'movie') return `${x.label}｜映画『${f.workTitle}』`;
+      if (f.workTitle && x.key === 'reading') return `${x.label}｜『${f.workTitle}』`;
+      return x.label;
     }
 
     async function selectBg(id) {
@@ -259,6 +287,8 @@
 
     function bindCreate() {
       $('#f-host').addEventListener('change', () => { readForm(); renderCreate(); });
+      $('#f-format').addEventListener('change', () => { readForm(); renderCreate(); });
+      if ($('#f-work')) ['input', 'change'].forEach((t) => $('#f-work').addEventListener(t, () => { syncForm(); redraw(); }));
       ['#f-idea', '#f-date', '#f-start', '#f-venue', '#f-max', '#f-title', '#f-desc', '#f-body'].forEach((sel) => {
         $(sel).addEventListener('input', () => { syncForm(); redraw(); });
         $(sel).addEventListener('change', () => { syncForm(); redraw(); });
@@ -294,7 +324,7 @@
       S.generating = true; renderCreate();
       try {
         const host = S.data.hosts.find((h) => h.id === S.form.hostId);
-        const res = await api('admin.generate', { idea: S.form.idea, hostName: host ? host.name : '' });
+        const res = await api('admin.generate', { idea: S.form.idea, format: S.form.format, workTitle: S.form.workTitle, hostName: host ? host.name : '' });
         S.form.title = res.copy.title;
         S.form.description = res.copy.description;
         S.form.body = res.copy.caption;
@@ -323,7 +353,7 @@
       const btn = $('#f-publish'); btn.disabled = true; btn.textContent = '公開しています…';
       try {
         const res = await api('admin.createEvent', {
-          hostId: f.hostId, idea: f.idea, date: f.date, start: f.start, venue: f.venue, max: f.max,
+          hostId: f.hostId, format: f.format, workTitle: f.workTitle, idea: f.idea, date: f.date, start: f.start, venue: f.venue, max: f.max,
           title: f.title, description: f.description, caption: fullCaption(f), sourceEventId: f.sourceEventId
         });
         S.published = res;
@@ -399,7 +429,7 @@
       const ev = S.data.events.find((e) => e.id === id);
       if (!ev) return;
       S.form = Object.assign(blankForm(), {
-        hostId: ev.hostId || S.data.me.id, idea: ev.rawIdea || '', venue: ev.venue, max: ev.max, start: ev.start,
+        hostId: ev.hostId || S.data.me.id, format: ev.format, workTitle: ev.workTitle || '', idea: ev.rawIdea || '', venue: ev.venue, max: ev.max, start: ev.start,
         title: ev.title, description: ev.description, body: String(ev.caption || '').split('──────────')[0].trim(),
         sourceEventId: ev.id, sourceTitle: ev.title
       });

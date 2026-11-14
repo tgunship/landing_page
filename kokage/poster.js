@@ -121,7 +121,19 @@
     const panelY = h - (story ? 330 : 96) - panelH;
 
     // 5. タイトル・案内文（入りきるまで文字を小さくする）
-    const areaTop = topY + 150;
+    let areaTop = topY + 150;
+    if (o.kicker) {
+      ctx.font = `700 34px ${SANS}`; spacing(ctx, 6);
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      const kw = Math.min(ctx.measureText(o.kicker).width + 60, w - 200);
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2;
+      roundRect(ctx, (w - kw) / 2, areaTop - 4, kw, 60, 30); ctx.stroke();
+      ctx.shadowBlur = 12;
+      ctx.fillText(o.kicker, w / 2 + 3, areaTop + 38, w - 260);
+      spacing(ctx, 0);
+      areaTop += 80;
+    }
     const areaBottom = panelY - 50;
     let tSize = 82, dSize = 38, tLines, dLines, tH, dH;
     for (let i = 0; i < 12; i++) {

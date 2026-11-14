@@ -41,7 +41,10 @@ function setupSheets() {
 
     // プルダウン（手で書き換えるときの入力ミス防止）
     if (key === 'users') setDropdown_(sheet, idx.role, [ROLE_LABEL.guest, ROLE_LABEL.member, ROLE_LABEL.iq]);
-    if (key === 'events') setDropdown_(sheet, idx.status, [EVENT_STATUS.OPEN, EVENT_STATUS.GO, EVENT_STATUS.CANCELLED, EVENT_STATUS.DONE]);
+    if (key === 'events') {
+      setDropdown_(sheet, idx.status, [EVENT_STATUS.OPEN, EVENT_STATUS.GO, EVENT_STATUS.CANCELLED, EVENT_STATUS.DONE]);
+      setDropdown_(sheet, idx.format, FORMATS.map(function (f) { return f.label; }));
+    }
     if (key === 'registrations') {
       setDropdown_(sheet, idx.status, [REG_STATUS.ACTIVE, REG_STATUS.CANCELLED]);
       setDropdown_(sheet, idx.type, [REG_TYPE.HOST, REG_TYPE.MEMBER, REG_TYPE.IQ, REG_TYPE.GUEST]);
