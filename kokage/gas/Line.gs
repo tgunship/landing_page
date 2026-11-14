@@ -175,6 +175,12 @@ function handleWebhookEvent_(ev) {
     if (reg) reply_(ev.replyToken, buildApplyReply(name, target, reg, cfg));
   } else {
     var c = regs.filter(function (r) { return r.status === REG_STATUS.CANCELLED; })[0];
-    if (c) reply_(ev.replyToken, buildCancelReply(name, target));
+    if (!c) return;
+    var now = new Date();
+    var byId = eventsById_(events);
+    var others = table_('registrations').all().filter(function (r) {
+      return r.line_user_id === userId && r.status === REG_STATUS.ACTIVE && byId[r.event_id] && isOpenForCancel(byId[r.event_id], now);
+    }).map(function (r) { return { event: byId[r.event_id], reg: r }; });
+    reply_(ev.replyToken, buildCancelReply(name, target, others));
   }
 }

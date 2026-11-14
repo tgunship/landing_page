@@ -162,11 +162,37 @@ function shouldFinishNow(ev, now) {
   return !!end && now.getTime() >= end.getTime();
 }
 
-/** 申込・キャンセルを受け付けられる状態か（開始時刻まで） */
-function isOpenForEntry(ev, now) {
+/** 新しい申込を受け付けられるか：「募集中」かつ開催判定（3日前の12時）より前 */
+function isOpenForApply(ev, now, cfg) {
+  if (ev.status !== EVENT_STATUS.OPEN) return false;
+  var t = decisionTimeOf(ev, cfg);
+  return !!t && now.getTime() < t.getTime();
+}
+
+/** キャンセルを受け付けられるか：「募集中」「開催決定」で開始時刻より前 */
+function isOpenForCancel(ev, now) {
   if (ev.status !== EVENT_STATUS.OPEN && ev.status !== EVENT_STATUS.GO) return false;
   var start = eventStart(ev);
   return !!start && now.getTime() < start.getTime();
+}
+
+/**
+ * 一般参加者の「初回」料金をどの申込に割り当てるか。
+ * 中止になっていない回への有効な「一般」申込のうち、いちばん先に申し込んだもの1件だけが初回。
+ * 戻り値: { 申込ID: true/false }
+ * → 初回の回が中止・キャンセルになったら、次の申込が自動で初回に戻る。
+ */
+function firstTimeAssignments(userId, registrations, eventsById) {
+  var mine = registrations.filter(function (r) {
+    if (r.line_user_id !== userId || r.status !== REG_STATUS.ACTIVE || !isGuestType(r.type)) return false;
+    var ev = eventsById[r.event_id];
+    return !!ev && ev.status !== EVENT_STATUS.CANCELLED;
+  }).sort(function (a, b) {
+    return String(a.created_at).localeCompare(String(b.created_at)) || (a._row || 0) - (b._row || 0);
+  });
+  var out = {};
+  mine.forEach(function (r, i) { out[r.reg_id] = i === 0; });
+  return out;
 }
 
 var WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -237,25 +263,36 @@ function buildApplyReply(name, ev, reg, cfg) {
     feeLines(reg, cfg),
     ''
   ];
-  if (ev.status === EVENT_STATUS.GO) {
-    lines.push('この回はすでに開催が決定しています。当日お会いできるのを楽しみにしています。');
-  } else {
-    lines.push('開催' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時ごろに、開催が決まったかどうかをこのLINEでお知らせします。');
-  }
+  lines.push('開催' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時ごろに、開催が決まったかどうかをこのLINEでお知らせします。');
   lines.push('');
   lines.push('急なお知らせや木陰の様子はInstagramでもお届けしています。よかったらフォローしてくださいね。');
   lines.push(cfg.INSTAGRAM_URL);
   return lines.join('\n');
 }
 
-function buildCancelReply(name, ev) {
-  return [
+function buildCancelReply(name, ev, others) {
+  var lines = [
     (name ? name + 'さん、' : '') + 'キャンセルを承りました。',
     '',
-    '『' + ev.title + '』（' + formatJpDate(ev.date) + '）',
-    '',
-    'また気が向いたときに、木陰でひと息つきに来てくださいね🌿'
-  ].join('\n');
+    '『' + ev.title + '』（' + formatJpDate(ev.date) + '）'
+  ];
+  if (others && others.length) {
+    lines.push('', 'いまお申し込み中の木陰：');
+    others.forEach(function (o) {
+      lines.push('・' + formatJpDate(o.event.date) + '『' + o.event.title + '』当日のお支払い ' + formatYen(o.reg.fee));
+    });
+  }
+  lines.push('', 'また気が向いたときに、木陰でひと息つきに来てくださいね🌿');
+  return lines.join('\n');
+}
+
+/** 料金が「初回」に戻った申込のお知らせ文（中止のお知らせに添える） */
+function buildFeeChangeNote(changes) {
+  if (!changes || !changes.length) return '';
+  return ['', 'なお、お申し込み中の次の木陰は、はじめての方の料金になりました。']
+    .concat(changes.map(function (c) {
+      return '・' + formatJpDate(c.event.date) + '『' + c.event.title + '』当日のお支払い ' + formatYen(c.fee);
+    })).join('\n');
 }
 
 function buildGoMessage(name, ev, reg, cfg) {
@@ -273,13 +310,13 @@ function buildGoMessage(name, ev, reg, cfg) {
   ].join('\n');
 }
 
-function buildNoGoMessage(name, ev) {
+function buildNoGoMessage(name, ev, note) {
   return [
     '【開催見送りのお知らせ】',
     (name ? name + 'さん、' : '') + '『' + ev.title + '』（' + formatJpDate(ev.date) + '）は、今回は最少催行人数に達しなかったため、開催を見送ることになりました。',
     '',
     'お申し込みいただいたこと、とても嬉しかったです。また別の日程でご案内できたときは、ぜひ木陰に遊びに来てくださいね🌿'
-  ].join('\n');
+  ].join('\n') + (note || '');
 }
 
 function buildAdminGoMessage(ev, counts) {
@@ -313,14 +350,20 @@ function buildAdminChangeMessage(kind, ev, name, counts) {
   ].join('\n');
 }
 
-function buildThanksMessage(name, ev, cfg) {
-  return [
+function buildThanksMessage(name, ev, cfg, shareDeclared) {
+  var lines = [
     (name ? name + 'さん、' : '') + '本日は木陰にお越しいただき、ありがとうございました🌿',
-    '',
-    'もしよければ、今日感じたことをInstagramや口コミでシェアしてもらえると嬉しいです。',
-    'Instagramでは ' + cfg.INSTAGRAM_HANDLE + ' をメンションしていただけると、うってぃがとても喜びます！',
-    cfg.INSTAGRAM_URL
-  ].join('\n');
+    ''
+  ];
+  if (shareDeclared) {
+    lines.push('今日感じたことを、ぜひInstagramや口コミでシェアしてくださいね。');
+  } else {
+    lines.push('もしよければ、今日感じたことをInstagramや口コミでシェアしてもらえると嬉しいです。');
+  }
+  lines.push('Instagramでは ' + cfg.INSTAGRAM_HANDLE + ' をメンションしていただけると、うってぃがとても喜びます！');
+  lines.push(cfg.INSTAGRAM_URL);
+  lines.push('', 'また、ふうっと一息つきたくなったら、いつでも木陰へ。');
+  return lines.join('\n');
 }
 
 function buildRevengeMessage(name, newEv, link) {
@@ -345,7 +388,8 @@ if (typeof module !== 'undefined' && module.exports) {
     calcFee: calcFee, isFirstTimeGuest: isFirstTimeGuest, countParticipants: countParticipants, isGo: isGo,
     makeDate: makeDate, normalizeDate: normalizeDate, normalizeTime: normalizeTime, addHoursToTime: addHoursToTime,
     decisionTimeOf: decisionTimeOf, shouldDecideNow: shouldDecideNow, shouldFinishNow: shouldFinishNow,
-    isOpenForEntry: isOpenForEntry, formatJpDate: formatJpDate, formatYen: formatYen,
+    isOpenForApply: isOpenForApply, isOpenForCancel: isOpenForCancel,
+    firstTimeAssignments: firstTimeAssignments, buildFeeChangeNote: buildFeeChangeNote, formatJpDate: formatJpDate, formatYen: formatYen,
     buildTriggerText: buildTriggerText, parseTriggerMessage: parseTriggerMessage,
     buildApplyReply: buildApplyReply, buildCancelReply: buildCancelReply, buildGoMessage: buildGoMessage,
     buildNoGoMessage: buildNoGoMessage, buildAdminGoMessage: buildAdminGoMessage,

@@ -72,9 +72,39 @@ test('終了処理・受付可否', () => {
   const ev = { status: '開催決定', date: '2026-12-08', start_time: '13:00', end_time: '16:00' };
   assert.equal(L.shouldFinishNow(ev, new Date(2026, 11, 8, 15, 59)), false);
   assert.equal(L.shouldFinishNow(ev, new Date(2026, 11, 8, 16, 0)), true);
-  assert.equal(L.isOpenForEntry(ev, new Date(2026, 11, 8, 12, 59)), true);
-  assert.equal(L.isOpenForEntry(ev, new Date(2026, 11, 8, 13, 0)), false);
-  assert.equal(L.isOpenForEntry({ ...ev, status: '中止' }, new Date(2026, 11, 1)), false);
+  // キャンセルは開催決定後も開始時刻まで
+  assert.equal(L.isOpenForCancel(ev, new Date(2026, 11, 8, 12, 59)), true);
+  assert.equal(L.isOpenForCancel(ev, new Date(2026, 11, 8, 13, 0)), false);
+  assert.equal(L.isOpenForCancel({ ...ev, status: '中止' }, new Date(2026, 11, 1)), false);
+});
+
+test('申込は開催判定（3日前の12時）で締切', () => {
+  const ev = { status: '募集中', date: '2026-12-08', start_time: '13:00', end_time: '16:00' };
+  assert.equal(L.isOpenForApply(ev, new Date(2026, 11, 5, 11, 59), cfg), true);
+  assert.equal(L.isOpenForApply(ev, new Date(2026, 11, 5, 12, 0), cfg), false);
+  assert.equal(L.isOpenForApply({ ...ev, status: '開催決定' }, new Date(2026, 11, 1), cfg), false);
+});
+
+test('初回料金の割り当て：初回の回が中止・キャンセルになると次の申込が初回に戻る', () => {
+  const reg = (reg_id, event_id, created_at, status = '申込') => ({ reg_id, event_id, created_at, status, type: '一般', line_user_id: 'U1' });
+  const regs = [reg('R1', 'A', '2026-11-01 10:00:00'), reg('R2', 'B', '2026-11-02 10:00:00'), reg('R3', 'C', '2026-11-03 10:00:00')];
+  const ev = (status) => ({ status });
+  let plan = L.firstTimeAssignments('U1', regs, { A: ev('募集中'), B: ev('募集中'), C: ev('募集中') });
+  assert.deepEqual({ ...plan }, { R1: true, R2: false, R3: false });
+  plan = L.firstTimeAssignments('U1', regs, { A: ev('中止'), B: ev('募集中'), C: ev('募集中') });
+  assert.deepEqual({ ...plan }, { R2: true, R3: false });
+  const cancelled = [reg('R1', 'A', '2026-11-01 10:00:00', 'キャンセル'), regs[1], regs[2]];
+  plan = L.firstTimeAssignments('U1', cancelled, { A: ev('募集中'), B: ev('募集中'), C: ev('募集中') });
+  assert.equal(plan.R2, true);
+  // すでに参加した回（終了）があれば、以降はすべて2回目以降
+  plan = L.firstTimeAssignments('U1', regs, { A: ev('終了'), B: ev('募集中'), C: ev('募集中') });
+  assert.deepEqual({ ...plan }, { R1: true, R2: false, R3: false });
+});
+
+test('お礼メッセージ：一般全員へ、割引申告の有無で文面が変わる', () => {
+  const ev = { title: 't', date: '2026-12-08' };
+  assert.match(L.buildThanksMessage('a', ev, cfg, true), /ぜひInstagram/);
+  assert.match(L.buildThanksMessage('a', ev, cfg, false), /もしよければ/);
 });
 
 test('日付・時刻の整形', () => {

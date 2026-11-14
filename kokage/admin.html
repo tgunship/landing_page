@@ -160,10 +160,7 @@
           <section>
             <div class="card">
               <h3>③ 画像</h3>
-              <div class="seg" id="f-format">
-                <button data-format="post" class="${S.format === 'post' ? 'active' : ''}">投稿 4:5</button>
-                <button data-format="story" class="${S.format === 'story' ? 'active' : ''}">ストーリーズ 9:16</button>
-              </div>
+              <p class="hint" style="margin-top:-4px">Instagram投稿用（4:5・1080×1350）</p>
               <div class="bg-list" id="f-bgs">
                 ${BACKGROUNDS.map((b) => `<button data-bg="${b.id}" class="${S.bgId === b.id ? 'active' : ''}" style="background-image:url('${b.src}')" aria-label="背景 ${b.id}"></button>`).join('')}
                 <button data-bg="upload" class="${S.bgId === 'upload' ? 'active' : ''}" style="${S.uploadImg ? `background-image:url('${S.uploadImg.src}')` : ''}">${S.uploadImg ? '' : '＋写真を<br>選ぶ'}</button>
@@ -178,7 +175,7 @@
 
             <div class="card">
               <h3>④ 公開して募集をはじめる</h3>
-              <p class="meta">公開すると申込画面に並び、${c.daysBefore}日前の${c.hour}時に「合計${c.minTotal}名以上・一般${c.minGuest}名以上」で開催かどうかが自動で決まります。${f.hostId ? 'ホストは自動で参加者に登録されます（場所代のみ）。' : ''}</p>
+              <p class="meta">公開すると申込画面に並び、${c.daysBefore}日前の${c.hour}時に申込を締め切り、「合計${c.minTotal}名以上・一般${c.minGuest}名以上」で開催かどうかが自動で決まります。${f.hostId ? 'ホストは自動で参加者に登録されます（場所代のみ）。' : ''}</p>
               <ul class="hint" id="f-missing" style="color:var(--warn)"></ul>
               <button class="btn block" id="f-publish">公開して募集開始</button>
             </div>
@@ -260,11 +257,6 @@
       });
       $('#f-gen').addEventListener('click', generate);
       $('#f-copycap').addEventListener('click', () => copy(fullCaption(S.form), '投稿文をコピーしました'));
-      $$('#f-format button').forEach((b) => b.addEventListener('click', () => {
-        S.format = b.dataset.format;
-        $$('#f-format button').forEach((x) => x.classList.toggle('active', x === b));
-        redraw();
-      }));
       $$('#f-bgs button').forEach((b) => b.addEventListener('click', () => {
         if (b.dataset.bg === 'upload') { $('#f-file').click(); return; }
         selectBg(b.dataset.bg);
@@ -304,7 +296,7 @@
 
     function download() {
       const canvas = $('#poster');
-      const name = `kokage_${S.form.date || 'draft'}_${S.format}.png`;
+      const name = `kokage_${S.form.date || 'draft'}.png`;
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

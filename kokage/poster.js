@@ -1,6 +1,6 @@
 // 木陰 — インスタ用画像をブラウザ（canvas）で合成する
 // レイヤー：背景（選択 or アップロード）→ 暗めの膜 → 文字 → 木陰フレーム（必ず最前面）
-// kokage/assets/frame-post.png（1080×1350）/ frame-story.png（1080×1920）を置くと、
+// kokage/assets/frame-post.png（1080×1350）を置くと、
 // 組み込みの枠の代わりにその透過PNGを最前面に重ねます。
 (function () {
   const SIZES = { post: { w: 1080, h: 1350 }, story: { w: 1080, h: 1920 } };

@@ -29,7 +29,7 @@
     </main>
 
     <footer class="small">
-      <p>主催：ここち ／ <a id="insta-link" href="https://www.instagram.com/kokochi1205/" target="_blank" rel="noopener">Instagram</a></p>
+      <p>主催：ここち ／ <a id="insta-link" href="https://www.instagram.com/kokochi1205/" target="_blank" rel="noopener">Instagram</a> ／ <a href="privacy.html">個人情報の取り扱い</a></p>
       <p id="admin-link" hidden><a href="admin.html">運営メニューを開く</a></p>
     </footer>
   </div>
@@ -77,6 +77,8 @@
         action = opts.mine
           ? `<button class="btn danger block" data-cancel="${esc(ev.id)}">キャンセルする</button>`
           : `<p class="hint">お申し込み済みです（当日のお支払い：${yen(ev.mine.fee)}）</p>`;
+      } else if (!ev.canApply) {
+        action = '<button class="btn block" disabled>募集は締め切りました</button>';
       } else if (full) {
         action = '<button class="btn block" disabled>満席です</button>';
       } else {
@@ -92,6 +94,7 @@
             ${ev.host ? `<div>🌿 ホスト：${esc(ev.host)}</div>` : ''}
           </div>
           <p class="desc">${esc(ev.description)}</p>
+          ${ev.canApply ? `<p class="hint" style="margin:-4px 0 8px">申込締切：${esc(ev.deadlineLabel)}</p>` : ''}
           <div class="counts">いまの申込：はじめての方・一般 ${c.guests}名 ／ 仲間 ${c.members}名　（残り${ev.remaining}席）</div>
           ${ev.mine && opts.mine ? `<p class="hint" style="margin-bottom:10px">当日のお支払い：${yen(ev.mine.fee)}</p>` : ''}
           ${action}
@@ -106,7 +109,7 @@
 
       if (state.tab === 'events') {
         app.innerHTML = d.events.length
-          ? `<p class="hint" style="margin-bottom:14px">開催日の3日前に、開催するかどうかをLINEでお知らせします。1回3時間（前半2時間はテーマに沿ってじっくり、後半1時間はゆるやかなフリータイム）です。</p>` + d.events.map((ev) => eventCard(ev)).join('')
+          ? `<p class="hint" style="margin-bottom:14px">お申し込みは開催日の3日前の12時まで。そのときに開催するかどうかを決めて、LINEでお知らせします。1回3時間（前半2時間はテーマに沿ってじっくり、後半1時間はゆるやかなフリータイム）です。</p>` + d.events.map((ev) => eventCard(ev)).join('')
           : '<div class="empty">いま募集中の木陰はありません。<br>次の木陰が決まったら、Instagramでもお知らせします。</div>';
       } else if (state.tab === 'mine') {
         const mine = d.events.filter((e) => e.mine);
@@ -165,6 +168,7 @@
         ${isGuest ? `<label class="check"><input type="checkbox" id="f-share"><span>参加後に、Instagramや口コミで感想をシェアします（参加費から${yen(state.data.fees.discount)}割引）<br><span class="hint">シェアは強制ではありません。自分のペースでどうぞ。</span></span></label>` : `<p class="hint">${esc(state.data.me.roleLabel)}の方は、参加費なし・場所代のみです。</p>`}
         <div class="fee" id="fee-box"></div>
         <p class="hint" style="margin-bottom:12px">お支払いは当日会場でお願いします。開催日の3日前に、開催するかどうかをLINEでお知らせします。</p>
+        <p class="hint" style="margin-bottom:12px">お申し込み内容とLINEの表示名は、木陰の運営（ここち）が申込の管理とご連絡のためだけに使います。<a href="privacy.html" target="_blank" rel="noopener">個人情報の取り扱い</a></p>
         <button class="btn block" id="f-submit" disabled>申し込む</button>
         <button class="btn ghost block" id="f-close" style="margin-top:10px">閉じる</button>`;
       renderFee();
@@ -215,7 +219,12 @@
       try {
         const res = await api('cancel', { eventId: id });
         await sendTrigger(res.triggerText);
-        toast('キャンセルしました');
+        if (res.feeChanges && res.feeChanges.length) {
+          alert('キャンセルしました。\n\nお申し込み中の次の木陰は、はじめての方の料金になりました。\n' +
+            res.feeChanges.map((c) => `・${c.dateLabel}『${c.title}』${yen(c.fee)}`).join('\n'));
+        } else {
+          toast('キャンセルしました');
+        }
         await refresh();
       } catch (e) { toast(e.message, true); }
     }

@@ -60,6 +60,8 @@ function withLock_(fn) {
 // ---------- 参加者向け ----------
 
 function publicEvent_(ev, regs, userId) {
+  var cfg = getConfig();
+  var deadline = decisionTimeOf(ev, cfg);
   var counts = countParticipants(ev.event_id, regs);
   var max = Number(ev.max_participants) || getConfig().DEFAULT_MAX_PARTICIPANTS;
   var mine = regs.filter(function (r) {
@@ -79,6 +81,8 @@ function publicEvent_(ev, regs, userId) {
     max: max,
     counts: counts,
     remaining: Math.max(0, max - counts.total),
+    canApply: isOpenForApply(ev, new Date(), cfg),
+    deadlineLabel: deadline ? formatJpDate(Utilities.formatDate(deadline, 'Asia/Tokyo', 'yyyy-MM-dd')) + ' ' + Utilities.formatDate(deadline, 'Asia/Tokyo', 'HH:mm') : '',
     mine: mine ? { fee: Number(mine.fee) || 0, type: mine.type, share: toBool(mine.share_declared) } : null
   };
 }
@@ -90,7 +94,12 @@ function apiInit_(ctx) {
   var regs = table_('registrations').all();
   var role = normalizeRole(ctx.user.role);
   var list = events
-    .filter(function (ev) { return isOpenForEntry(ev, now); })
+    .filter(function (ev) {
+      if (isOpenForApply(ev, now, cfg)) return true;
+      return isOpenForCancel(ev, now) && regs.some(function (r) {
+        return r.event_id === ev.event_id && r.line_user_id === ctx.userId && r.status === REG_STATUS.ACTIVE;
+      });
+    })
     .sort(function (a, b) { return eventStart(a) - eventStart(b); })
     .map(function (ev) { return publicEvent_(ev, regs, ctx.userId); });
 
@@ -120,7 +129,7 @@ function apiApply_(ctx, body) {
   var events = evTable.all();
   var ev = events.filter(function (e) { return e.event_id === body.eventId; })[0];
   if (!ev) throw new Error('イベントが見つかりません');
-  if (!isOpenForEntry(ev, now)) throw new Error('この木陰はいまは申し込みを受け付けていません');
+  if (!isOpenForApply(ev, now, cfg)) throw new Error('この木陰の申し込みは締め切りました（開催' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時まで）');
 
   var regTable = table_('registrations');
   var regs = regTable.all();
@@ -161,11 +170,6 @@ function apiApply_(ctx, body) {
     regTable.append(reg);
   }
 
-  if (ev.status === EVENT_STATUS.GO) {
-    var after = countParticipants(ev.event_id, regTable.all());
-    pushToAdmins_(buildAdminChangeMessage('apply', ev, ctx.name, after), { kind: '管理者:追加申込', eventId: ev.event_id });
-  }
-
   return {
     ok: true,
     fee: fee,
@@ -180,7 +184,7 @@ function apiCancel_(ctx, body) {
   var events = table_('events').all();
   var ev = events.filter(function (e) { return e.event_id === body.eventId; })[0];
   if (!ev) throw new Error('イベントが見つかりません');
-  if (!isOpenForEntry(ev, now)) throw new Error('この木陰はキャンセルを受け付けられない状態です。公式LINEのチャットでご連絡ください。');
+  if (!isOpenForCancel(ev, now)) throw new Error('この木陰はキャンセルを受け付けられない状態です。公式LINEのチャットでご連絡ください。');
 
   var regTable = table_('registrations');
   var reg = regTable.all().filter(function (r) {
@@ -189,11 +193,18 @@ function apiCancel_(ctx, body) {
   if (!reg) throw new Error('お申し込みが見つかりません');
   regTable.update(reg._row, { status: REG_STATUS.CANCELLED, cancelled_at: nowStamp_() });
 
+  // キャンセルした回が「初回」だった場合、次の申込を自動で初回料金に戻す
+  var changes = recomputeFirstTime_([ctx.userId]);
+
   if (ev.status === EVENT_STATUS.GO) {
     var after = countParticipants(ev.event_id, regTable.all());
     pushToAdmins_(buildAdminChangeMessage('cancel', ev, ctx.name, after), { kind: '管理者:キャンセル', eventId: ev.event_id });
   }
-  return { ok: true, triggerText: buildTriggerText('cancel', ev.event_id) };
+  return {
+    ok: true,
+    triggerText: buildTriggerText('cancel', ev.event_id),
+    feeChanges: changes.map(function (c) { return { title: c.event.title, dateLabel: formatJpDate(c.event.date), fee: c.fee }; })
+  };
 }
 
 function apiRequest_(ctx, body) {
@@ -340,4 +351,36 @@ function apiAdminCreate_(ctx, body) {
   }
 
   return { ok: true, eventId: ev.event_id, link: entryLink(ev.event_id), invited: invited };
+}
+
+/**
+ * 一般参加者の「初回」料金を割り当て直す（中止・キャンセルで初回が空いたら次の申込を初回に戻す）。
+ * 料金を変えるのは「募集中」の回だけ（開催決定のお知らせ後に金額が変わらないように）。
+ * userIds を省略すると全員を見直す。戻り値：料金が変わった申込の一覧
+ */
+function recomputeFirstTime_(userIds) {
+  var cfg = getConfig();
+  var regTable = table_('registrations');
+  var regs = regTable.all();
+  var byId = eventsById_(table_('events').all());
+  var targets = userIds || regs.filter(function (r) { return isGuestType(r.type); })
+    .map(function (r) { return r.line_user_id; })
+    .filter(function (id, i, arr) { return id && arr.indexOf(id) === i; });
+  var changes = [];
+  targets.forEach(function (userId) {
+    var plan = firstTimeAssignments(userId, regs, byId);
+    regs.forEach(function (r) {
+      if (!(r.reg_id in plan)) return;
+      var ev = byId[r.event_id];
+      if (!ev || ev.status !== EVENT_STATUS.OPEN) return;
+      var first = plan[r.reg_id];
+      if (toBool(r.first_time) === first) return;
+      var fee = calcFee({ role: ROLE.GUEST, isFirstTime: first, shareDeclared: toBool(r.share_declared) }, cfg).total;
+      regTable.update(r._row, { first_time: boolLabel(first), fee: fee });
+      r.first_time = boolLabel(first);
+      r.fee = String(fee);
+      changes.push({ userId: userId, reg: r, event: ev, fee: fee, first: first });
+    });
+  });
+  return changes;
 }
