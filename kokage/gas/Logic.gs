@@ -162,11 +162,12 @@ function shouldFinishNow(ev, now) {
   return !!end && now.getTime() >= end.getTime();
 }
 
-/** 新しい申込を受け付けられるか：「募集中」かつ開催判定（3日前の12時）より前 */
-function isOpenForApply(ev, now, cfg) {
-  if (ev.status !== EVENT_STATUS.OPEN) return false;
-  var t = decisionTimeOf(ev, cfg);
-  return !!t && now.getTime() < t.getTime();
+/**
+ * 新しい申込を受け付けられるか：「募集中」「開催決定」で開始時刻より前。
+ * （開催判定の後も、開催が決まった回には当日の開始まで申し込める）
+ */
+function isOpenForApply(ev, now) {
+  return isOpenForCancel(ev, now);
 }
 
 /** キャンセルを受け付けられるか：「募集中」「開催決定」で開始時刻より前 */
@@ -263,7 +264,11 @@ function buildApplyReply(name, ev, reg, cfg) {
     feeLines(reg, cfg),
     ''
   ];
-  lines.push('開催' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時ごろに、開催が決まったかどうかをこのLINEでお知らせします。');
+  if (ev.status === EVENT_STATUS.GO) {
+    lines.push('この回はすでに開催が決まっています。当日お会いできるのを楽しみにしています。');
+  } else {
+    lines.push('開催' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時ごろに、開催が決まったかどうかをこのLINEでお知らせします。');
+  }
   lines.push('');
   lines.push('急なお知らせや木陰の様子はInstagramでもお届けしています。よかったらフォローしてくださいね。');
   lines.push(cfg.INSTAGRAM_URL);
@@ -340,14 +345,17 @@ function buildAdminNoGoMessage(ev, counts) {
   ].join('\n');
 }
 
-function buildAdminChangeMessage(kind, ev, name, counts) {
-  return [
-    '【管理者通知｜開催決定後の' + (kind === 'cancel' ? 'キャンセル' : '追加申込') + '】',
-    formatJpDate(ev.date) + '『' + ev.title + '』',
+/** 開催決定後の追加申込・キャンセルのお知らせ（forHost=true でホスト向けの文面） */
+function buildAdminChangeMessage(kind, ev, name, counts, forHost) {
+  var label = kind === 'cancel' ? 'キャンセル' : '追加申込';
+  var lines = [
+    forHost ? '【ホストのあなたへ｜' + label + 'がありました】' : '【管理者通知｜開催決定後の' + label + '】',
+    formatJpDate(ev.date) + ' ' + ev.start_time + '〜『' + ev.title + '』',
     (name || '参加者') + 'さんが' + (kind === 'cancel' ? 'キャンセルしました。' : '申し込みました。'),
-    '現在 合計' + counts.total + '名（一般' + counts.guests + '名 / メンバー' + counts.members + '名）',
-    '会場予約の人数をご確認ください。'
-  ].join('\n');
+    '現在 合計' + counts.total + '名（一般' + counts.guests + '名 / メンバー' + counts.members + '名）'
+  ];
+  lines.push(forHost ? '申込状況はメニューの「申込状況」から見られます。' : '会場予約の人数をご確認ください。');
+  return lines.join('\n');
 }
 
 function buildThanksMessage(name, ev, cfg, shareDeclared) {

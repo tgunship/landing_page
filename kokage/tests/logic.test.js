@@ -78,11 +78,19 @@ test('終了処理・受付可否', () => {
   assert.equal(L.isOpenForCancel({ ...ev, status: '中止' }, new Date(2026, 11, 1)), false);
 });
 
-test('申込は開催判定（3日前の12時）で締切', () => {
+test('申込は開始時刻まで（開催決定後も可・中止は不可）', () => {
   const ev = { status: '募集中', date: '2026-12-08', start_time: '13:00', end_time: '16:00' };
-  assert.equal(L.isOpenForApply(ev, new Date(2026, 11, 5, 11, 59), cfg), true);
-  assert.equal(L.isOpenForApply(ev, new Date(2026, 11, 5, 12, 0), cfg), false);
-  assert.equal(L.isOpenForApply({ ...ev, status: '開催決定' }, new Date(2026, 11, 1), cfg), false);
+  assert.equal(L.isOpenForApply(ev, new Date(2026, 11, 5, 11, 59)), true);
+  assert.equal(L.isOpenForApply({ ...ev, status: '開催決定' }, new Date(2026, 11, 8, 12, 59)), true);
+  assert.equal(L.isOpenForApply({ ...ev, status: '開催決定' }, new Date(2026, 11, 8, 13, 0)), false);
+  assert.equal(L.isOpenForApply({ ...ev, status: '中止' }, new Date(2026, 11, 1)), false);
+});
+
+test('開催決定後の追加申込：運営向けとホスト向けで文面が変わる', () => {
+  const ev = { title: 't', date: '2026-12-08', start_time: '13:00' };
+  const counts = { total: 5, guests: 3, members: 2 };
+  assert.match(L.buildAdminChangeMessage('apply', ev, 'はなこ', counts, false), /管理者通知.*追加申込[\s\S]*会場予約/);
+  assert.match(L.buildAdminChangeMessage('apply', ev, 'はなこ', counts, true), /ホストのあなたへ[\s\S]*申込状況/);
 });
 
 test('初回料金の割り当て：初回の回が中止・キャンセルになると次の申込が初回に戻る', () => {

@@ -72,7 +72,7 @@
 
     function blankForm() {
       const c = S.data.config;
-      return { hostId: '', idea: '', date: '', start: c.start, venue: c.venue, max: c.max, title: '', description: '', body: '', sourceEventId: '', sourceTitle: '' };
+      return { hostId: S.data.staffHost, hostName: 'うってぃ', idea: '', date: '', start: c.start, venue: c.venue, max: c.max, title: '', description: '', body: '', sourceEventId: '', sourceTitle: '' };
     }
 
     function captionInfo(f) {
@@ -125,11 +125,12 @@
               <h3>① 企画の中身（打ち合わせしながら入力）</h3>
               <label class="field"><span>ホスト（ライフクエストのメンバー）</span>
                 <select id="f-host">
-                  <option value="">ホストなし（運営が開く）</option>
+                  <option value="${esc(S.data.staffHost)}" ${f.hostId === S.data.staffHost ? 'selected' : ''}>運営がホスト（参加費・場所代なし）</option>
                   ${hosts.map((h) => `<option value="${esc(h.id)}" ${h.id === f.hostId ? 'selected' : ''}>${esc(h.name)}（${esc(h.role)}）</option>`).join('')}
                 </select>
                 ${hosts.length ? '' : '<p class="hint">名簿の「区分」を「LQメンバー」にすると、ここに表示されます。</p>'}
               </label>
+              ${f.hostId === S.data.staffHost ? `<label class="field"><span>ホストの名前（申込画面に表示）</span><input type="text" id="f-hostname" value="${esc(f.hostName)}"></label>` : ''}
               <label class="field"><span>企画のテーマ・やりたいこと・想い<span class="req">必須</span></span>
                 <textarea id="f-idea" rows="6" placeholder="思いつくままに、たらたら書いてOK。例）人の目を気にして疲れちゃう人と、痛みと願いカードで自分の願いを見つける時間にしたい">${esc(f.idea)}</textarea></label>
               <div class="row">
@@ -175,7 +176,7 @@
 
             <div class="card">
               <h3>④ 公開して募集をはじめる</h3>
-              <p class="meta">公開すると申込画面に並び、${c.daysBefore}日前の${c.hour}時に申込を締め切り、「合計${c.minTotal}名以上・一般${c.minGuest}名以上」で開催かどうかが自動で決まります。${f.hostId ? 'ホストは自動で参加者に登録されます（場所代のみ）。' : ''}</p>
+              <p class="meta">公開すると申込画面に並び、${c.daysBefore}日前の${c.hour}時に申込を締め切り、「合計${c.minTotal}名以上・一般${c.minGuest}名以上」で開催かどうかが自動で決まります。${f.hostId === S.data.staffHost ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは自動で参加者に登録されます（場所代のみ）。'}</p>
               <ul class="hint" id="f-missing" style="color:var(--warn)"></ul>
               <button class="btn block" id="f-publish">公開して募集開始</button>
             </div>
@@ -190,6 +191,7 @@
     function readForm() {
       const f = S.form;
       f.hostId = $('#f-host').value;
+      if ($('#f-hostname')) f.hostName = $('#f-hostname').value.trim();
       f.idea = $('#f-idea').value;
       f.date = $('#f-date').value;
       f.start = $('#f-start').value;
@@ -203,6 +205,7 @@
     function missingFields() {
       const f = S.form;
       const miss = [];
+      if (f.hostId === S.data.staffHost && !f.hostName) miss.push(['#f-hostname', 'ホストの名前']);
       if (!f.idea.trim()) miss.push(['#f-idea', '企画のテーマ・想い']);
       if (!f.date) miss.push(['#f-date', '開催日']);
       else if (f.date < minDate()) miss.push(['#f-date', `開催日（${S.data.config.daysBefore}日前の判定が過ぎない日付に）`]);
@@ -251,7 +254,9 @@
     }
 
     function bindCreate() {
-      ['#f-host', '#f-idea', '#f-date', '#f-start', '#f-venue', '#f-max', '#f-title', '#f-desc', '#f-body'].forEach((sel) => {
+      $('#f-host').addEventListener('change', () => { readForm(); renderCreate(); });
+      if ($('#f-hostname')) $('#f-hostname').addEventListener('input', () => { syncForm(); });
+      ['#f-idea', '#f-date', '#f-start', '#f-venue', '#f-max', '#f-title', '#f-desc', '#f-body'].forEach((sel) => {
         $(sel).addEventListener('input', () => { syncForm(); redraw(); });
         $(sel).addEventListener('change', () => { syncForm(); redraw(); });
       });
@@ -286,7 +291,7 @@
       S.generating = true; renderCreate();
       try {
         const host = S.data.hosts.find((h) => h.id === S.form.hostId);
-        const res = await api('admin.generate', { idea: S.form.idea, hostName: host ? host.name : '' });
+        const res = await api('admin.generate', { idea: S.form.idea, hostName: host ? host.name : S.form.hostName });
         S.form.title = res.copy.title;
         S.form.description = res.copy.description;
         S.form.body = res.copy.caption;
@@ -315,7 +320,7 @@
       const btn = $('#f-publish'); btn.disabled = true; btn.textContent = '公開しています…';
       try {
         const res = await api('admin.createEvent', {
-          hostId: f.hostId, idea: f.idea, date: f.date, start: f.start, venue: f.venue, max: f.max,
+          hostId: f.hostId, hostName: f.hostName, idea: f.idea, date: f.date, start: f.start, venue: f.venue, max: f.max,
           title: f.title, description: f.description, caption: fullCaption(f), sourceEventId: f.sourceEventId
         });
         S.published = res;
@@ -391,7 +396,7 @@
       const ev = S.data.events.find((e) => e.id === id);
       if (!ev) return;
       S.form = Object.assign(blankForm(), {
-        hostId: ev.hostId || '', idea: ev.rawIdea || '', venue: ev.venue, max: ev.max, start: ev.start,
+        hostId: ev.hostId || S.data.staffHost, hostName: ev.hostId === S.data.staffHost ? ev.host : 'うってぃ', idea: ev.rawIdea || '', venue: ev.venue, max: ev.max, start: ev.start,
         title: ev.title, description: ev.description, body: String(ev.caption || '').split('──────────')[0].trim(),
         sourceEventId: ev.id, sourceTitle: ev.title
       });

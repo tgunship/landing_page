@@ -40,6 +40,7 @@ function handleApi_(body) {
     case 'apply': return withLock_(function () { return apiApply_(ctx, body); });
     case 'cancel': return withLock_(function () { return apiCancel_(ctx, body); });
     case 'request': return apiRequest_(ctx, body);
+    case 'status': return apiStatus_(ctx);
   }
 
   if (!isAdmin(ctx.userId)) throw new Error('運営メンバーのみが使える機能です');
@@ -61,7 +62,7 @@ function withLock_(fn) {
 
 function publicEvent_(ev, regs, userId) {
   var cfg = getConfig();
-  var deadline = decisionTimeOf(ev, cfg);
+  var decision = decisionTimeOf(ev, cfg);
   var counts = countParticipants(ev.event_id, regs);
   var max = Number(ev.max_participants) || getConfig().DEFAULT_MAX_PARTICIPANTS;
   var mine = regs.filter(function (r) {
@@ -81,8 +82,8 @@ function publicEvent_(ev, regs, userId) {
     max: max,
     counts: counts,
     remaining: Math.max(0, max - counts.total),
-    canApply: isOpenForApply(ev, new Date(), cfg),
-    deadlineLabel: deadline ? formatJpDate(Utilities.formatDate(deadline, 'Asia/Tokyo', 'yyyy-MM-dd')) + ' ' + Utilities.formatDate(deadline, 'Asia/Tokyo', 'HH:mm') : '',
+    canApply: isOpenForApply(ev, new Date()),
+    decisionLabel: decision ? formatJpDate(Utilities.formatDate(decision, 'Asia/Tokyo', 'yyyy-MM-dd')) + ' ' + Utilities.formatDate(decision, 'Asia/Tokyo', 'HH:mm') : '',
     mine: mine ? { fee: Number(mine.fee) || 0, type: mine.type, share: toBool(mine.share_declared) } : null
   };
 }
@@ -94,12 +95,7 @@ function apiInit_(ctx) {
   var regs = table_('registrations').all();
   var role = normalizeRole(ctx.user.role);
   var list = events
-    .filter(function (ev) {
-      if (isOpenForApply(ev, now, cfg)) return true;
-      return isOpenForCancel(ev, now) && regs.some(function (r) {
-        return r.event_id === ev.event_id && r.line_user_id === ctx.userId && r.status === REG_STATUS.ACTIVE;
-      });
-    })
+    .filter(function (ev) { return isOpenForApply(ev, now); })
     .sort(function (a, b) { return eventStart(a) - eventStart(b); })
     .map(function (ev) { return publicEvent_(ev, regs, ctx.userId); });
 
@@ -110,6 +106,7 @@ function apiInit_(ctx) {
       role: role,
       roleLabel: ROLE_LABEL[role],
       isAdmin: isAdmin(ctx.userId),
+      canSeeStatus: isAdmin(ctx.userId) || role === ROLE.MEMBER,
       firstTime: role === ROLE.GUEST ? isFirstTimeGuest(ctx.userId, regs, eventsById_(events), null) : false
     },
     fees: {
@@ -129,7 +126,7 @@ function apiApply_(ctx, body) {
   var events = evTable.all();
   var ev = events.filter(function (e) { return e.event_id === body.eventId; })[0];
   if (!ev) throw new Error('イベントが見つかりません');
-  if (!isOpenForApply(ev, now, cfg)) throw new Error('この木陰の申し込みは締め切りました（開催' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時まで）');
+  if (!isOpenForApply(ev, now)) throw new Error('この木陰はいまは申し込みを受け付けていません');
 
   var regTable = table_('registrations');
   var regs = regTable.all();
@@ -170,6 +167,9 @@ function apiApply_(ctx, body) {
     regTable.append(reg);
   }
 
+  // 開催決定後の追加申込は、運営3名とホストへお知らせ（会場予約の人数が変わるため）
+  if (ev.status === EVENT_STATUS.GO) notifyChange_('apply', ev, ctx.name, regTable.all());
+
   return {
     ok: true,
     fee: fee,
@@ -196,10 +196,7 @@ function apiCancel_(ctx, body) {
   // キャンセルした回が「初回」だった場合、次の申込を自動で初回料金に戻す
   var changes = recomputeFirstTime_([ctx.userId]);
 
-  if (ev.status === EVENT_STATUS.GO) {
-    var after = countParticipants(ev.event_id, regTable.all());
-    pushToAdmins_(buildAdminChangeMessage('cancel', ev, ctx.name, after), { kind: '管理者:キャンセル', eventId: ev.event_id });
-  }
+  if (ev.status === EVENT_STATUS.GO) notifyChange_('cancel', ev, ctx.name, regTable.all());
   return {
     ok: true,
     triggerText: buildTriggerText('cancel', ev.event_id),
@@ -218,6 +215,56 @@ function apiRequest_(ctx, body) {
 
 // ---------- 運営向け ----------
 
+var STAFF_HOST = '__staff__';
+
+/** 開催決定後の追加申込・キャンセルを、運営3名とホスト（LQメンバーの場合）へ Push */
+function notifyChange_(kind, ev, name, regs) {
+  var counts = countParticipants(ev.event_id, regs);
+  pushToAdmins_(buildAdminChangeMessage(kind, ev, name, counts, false),
+    { kind: kind === 'cancel' ? '管理者:キャンセル' : '管理者:追加申込', eventId: ev.event_id });
+  if (ev.host_user_id && !isAdmin(ev.host_user_id)) {
+    push_(ev.host_user_id, buildAdminChangeMessage(kind, ev, name, counts, true),
+      { kind: kind === 'cancel' ? 'ホスト:キャンセル' : 'ホスト:追加申込', eventId: ev.event_id, name: ev.host_name });
+  }
+}
+
+/**
+ * 申込状況
+ *  - LQメンバー：「募集中」「開催決定」の回だけ。名前と参加区分のみ（料金・紹介者は見せない）
+ *  - 運営：すべての回・すべての項目
+ */
+function apiStatus_(ctx) {
+  var admin = isAdmin(ctx.userId);
+  var role = normalizeRole(ctx.user.role);
+  if (!admin && role !== ROLE.MEMBER) throw new Error('ライフクエストのメンバーと運営だけが見られます');
+  var cfg = getConfig();
+  var regs = table_('registrations').all();
+  var list = table_('events').all()
+    .filter(function (ev) { return admin || ev.status === EVENT_STATUS.OPEN || ev.status === EVENT_STATUS.GO; })
+    .sort(function (a, b) { return (eventStart(a) || 0) - (eventStart(b) || 0); });
+  if (admin) list = list.slice(-60);
+  return {
+    ok: true,
+    admin: admin,
+    minTotal: cfg.MIN_TOTAL_PARTICIPANTS,
+    minGuest: cfg.MIN_GUEST_PARTICIPANTS,
+    events: list.map(function (ev) {
+      var base = publicEvent_(ev, regs, ctx.userId);
+      base.isHost = ev.host_user_id === ctx.userId;
+      base.registrations = regs.filter(function (r) {
+        return r.event_id === ev.event_id && (admin || r.status === REG_STATUS.ACTIVE);
+      }).map(function (r) {
+        var o = { name: r.display_name, type: r.type, status: r.status };
+        if (admin) {
+          o.fee = Number(r.fee) || 0; o.first = toBool(r.first_time); o.share = toBool(r.share_declared); o.referrer = r.referrer;
+        }
+        return o;
+      });
+      return base;
+    })
+  };
+}
+
 function apiAdminOverview_(ctx) {
   var cfg = getConfig();
   var events = table_('events').all();
@@ -234,7 +281,7 @@ function apiAdminOverview_(ctx) {
       var base = publicEvent_(ev, regs, '');
       var decision = decisionTimeOf(ev, cfg);
       base.decisionLabel = decision ? Utilities.formatDate(decision, 'Asia/Tokyo', 'M/d HH:mm') : '';
-      base.hostId = ev.host_user_id;
+      base.hostId = ev.host_user_id || (ev.host_name ? STAFF_HOST : '');
       base.caption = ev.caption;
       base.rawIdea = ev.raw_idea;
       base.sourceEventId = ev.source_event_id;
@@ -268,6 +315,7 @@ function apiAdminOverview_(ctx) {
     pushLimit: cfg.PUSH_MONTHLY_LIMIT,
     spreadsheetUrl: getSpreadsheet_().getUrl(),
     hosts: hosts,
+    staffHost: STAFF_HOST,
     events: list,
     requests: requests
   };
@@ -313,11 +361,16 @@ function apiAdminCreate_(ctx, body) {
   }
 
   var host = null;
-  if (body.hostId) {
+  if (body.hostId === STAFF_HOST) {
+    // 運営（うってぃ）がホスト：参加費・場所代なし、参加者として登録しない（人数にも数えない）
+    ev.host_name = String(body.hostName || ctx.name || '運営').trim();
+  } else if (body.hostId) {
     host = findUser_(body.hostId);
     if (!host) throw new Error('ホストが名簿に見つかりません');
     ev.host_user_id = host.line_user_id;
     ev.host_name = host.display_name;
+  } else {
+    throw new Error('ホストを選んでください');
   }
 
   var evTable = table_('events');
