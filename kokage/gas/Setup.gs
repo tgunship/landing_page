@@ -68,7 +68,7 @@ function installTriggers() {
 }
 
 function checkSettings() {
-  var required = ['LINE_CHANNEL_ACCESS_TOKEN', 'LINE_LOGIN_CHANNEL_ID', 'LIFF_ID', 'ADMIN_LINE_USER_IDS', 'GEMINI_API_KEY', 'WEBHOOK_TOKEN'];
+  var required = ['LINE_CHANNEL_ACCESS_TOKEN', 'LINE_LOGIN_CHANNEL_ID', 'LIFF_ID', 'ADMIN_LINE_USER_IDS', 'OWNER_LINE_USER_ID', 'GEMINI_API_KEY', 'WEBHOOK_TOKEN'];
   var lines = required.map(function (k) { return (prop(k) ? '✅ ' : '❌ ') + k; });
   var url = '';
   try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { /* noop */ }
