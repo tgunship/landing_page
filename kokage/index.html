@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>木陰｜ふうっと、一息つける場所</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#12838b">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand">
+      <p class="brand__name">木陰</p>
+      <p class="brand__sub">慌ただしい日常から、ふうっと一息つける場所</p>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button data-tab="events" class="active">募集中の木陰</button>
+      <button data-tab="mine">わたしの予約</button>
+      <button data-tab="request">テーマを届ける</button>
+    </nav>
+
+    <main id="app">
+      <div class="loading"><div class="spinner"></div>読み込んでいます…</div>
+    </main>
+
+    <footer class="small">
+      <p>主催：ここち ／ <a id="insta-link" href="https://www.instagram.com/kokochi1205/" target="_blank" rel="noopener">Instagram</a></p>
+      <p id="admin-link" hidden><a href="admin.html">運営メニューを開く</a></p>
+    </footer>
+  </div>
+
+  <!-- 申し込みシート -->
+  <div class="sheet" id="apply-sheet" aria-modal="true" role="dialog">
+    <div class="sheet__body" id="apply-body"></div>
+  </div>
+
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="config.js"></script>
+  <script src="common.js"></script>
+  <script>
+  (function () {
+    const { initLiff, api, sendTrigger, yen, esc, $, $$, toast } = Kokage;
+    let state = { tab: 'events', data: null, pending: null };
+
+    const params = new URLSearchParams(location.search);
+    // LIFF の URL（liff.line.me/...?event=...）から来た場合は liff.state に入っていることがある
+    const liffState = params.get('liff.state');
+    const deep = new URLSearchParams(liffState && liffState.indexOf('?') >= 0 ? liffState.slice(liffState.indexOf('?')) : '');
+    const focusEventId = params.get('event') || deep.get('event');
+    const startTab = params.get('tab') || deep.get('tab');
+    if (startTab) state.tab = startTab;
+
+    $$('.tabs button').forEach((b) => b.addEventListener('click', () => { state.tab = b.dataset.tab; render(); }));
+
+    async function load() {
+      state.data = await api('init');
+      $('#admin-link').hidden = !state.data.me.isAdmin;
+      $('#insta-link').href = state.data.instagramUrl;
+    }
+
+    function statusBadge(ev) {
+      if (ev.status === '開催決定') return '<span class="badge go">開催決定</span>';
+      return '<span class="badge">参加者募集中</span>';
+    }
+
+    function eventCard(ev, opts) {
+      opts = opts || {};
+      const c = ev.counts;
+      const full = ev.remaining <= 0;
+      let action = '';
+      if (ev.mine) {
+        action = opts.mine
+          ? `<button class="btn danger block" data-cancel="${esc(ev.id)}">キャンセルする</button>`
+          : `<p class="hint">お申し込み済みです（当日のお支払い：${yen(ev.mine.fee)}）</p>`;
+      } else if (full) {
+        action = '<button class="btn block" disabled>満席です</button>';
+      } else {
+        action = `<button class="btn block" data-apply="${esc(ev.id)}">この木陰に申し込む</button>`;
+      }
+      return `
+        <article class="card" id="ev-${esc(ev.id)}">
+          <div class="badges">${statusBadge(ev)}${ev.mine ? '<span class="badge mine">申込済み</span>' : ''}</div>
+          <h3>${esc(ev.title)}</h3>
+          <div class="meta">
+            <div>📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}</div>
+            <div>📍 ${esc(ev.venue)}</div>
+            ${ev.host ? `<div>🌿 ホスト：${esc(ev.host)}</div>` : ''}
+          </div>
+          <p class="desc">${esc(ev.description)}</p>
+          <div class="counts">いまの申込：はじめての方・一般 ${c.guests}名 ／ 仲間 ${c.members}名　（残り${ev.remaining}席）</div>
+          ${ev.mine && opts.mine ? `<p class="hint" style="margin-bottom:10px">当日のお支払い：${yen(ev.mine.fee)}</p>` : ''}
+          ${action}
+        </article>`;
+    }
+
+    function render() {
+      $$('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === state.tab));
+      const app = $('#app');
+      const d = state.data;
+      if (!d) return;
+
+      if (state.tab === 'events') {
+        app.innerHTML = d.events.length
+          ? `<p class="hint" style="margin-bottom:14px">開催日の3日前に、開催するかどうかをLINEでお知らせします。1回3時間（前半2時間はテーマに沿ってじっくり、後半1時間はゆるやかなフリータイム）です。</p>` + d.events.map((ev) => eventCard(ev)).join('')
+          : '<div class="empty">いま募集中の木陰はありません。<br>次の木陰が決まったら、Instagramでもお知らせします。</div>';
+      } else if (state.tab === 'mine') {
+        const mine = d.events.filter((e) => e.mine);
+        app.innerHTML = mine.length
+          ? mine.map((ev) => eventCard(ev, { mine: true })).join('')
+          : '<div class="empty">いまお申し込み中の木陰はありません。</div>';
+      } else {
+        app.innerHTML = `
+          <div class="card">
+            <h3>木陰で扱ってほしいテーマ</h3>
+            <p class="meta">「こんなテーマで話してみたい」「こんな時間がほしい」を気軽に届けてください。ライフクエストの仲間が「やりたい！」と手を挙げたら、木陰として開かれます。</p>
+            <label class="field"><span>テーマ・想い</span><textarea id="req-text" placeholder="例）つい人の目を気にして疲れてしまう…そんな自分とゆっくり向き合いたい"></textarea></label>
+            <button class="btn block" id="req-send">届ける</button>
+          </div>`;
+        $('#req-send').addEventListener('click', sendRequest);
+      }
+      $$('[data-apply]').forEach((b) => b.addEventListener('click', () => openApply(b.dataset.apply)));
+      $$('[data-cancel]').forEach((b) => b.addEventListener('click', () => cancel(b.dataset.cancel)));
+    }
+
+    // ---- 申し込み ----
+    function feeFor(share) {
+      const d = state.data;
+      if (d.me.role !== 'guest') return { lines: [['参加費（仲間）', 0], ['場所代', d.fees.venue]], total: d.fees.venue };
+      const base = d.me.firstTime ? d.fees.first : d.fees.regular;
+      const disc = share ? Math.min(d.fees.discount, base) : 0;
+      const lines = [[d.me.firstTime ? '参加費（はじめての方）' : '参加費', base]];
+      if (disc) lines.push(['発信・口コミ割引', -disc]);
+      lines.push(['場所代（イバフォルニア・ベース利用料）', d.fees.venue]);
+      return { lines, total: base - disc + d.fees.venue };
+    }
+
+    function renderFee() {
+      const share = $('#f-share') ? $('#f-share').checked : false;
+      const f = feeFor(share);
+      $('#fee-box').innerHTML = f.lines.map(([k, v]) => `<div class="fee-row"><span>${esc(k)}</span><span>${v < 0 ? '−' + yen(-v) : yen(v)}</span></div>`).join('') +
+        `<div class="fee-total"><span>当日のお支払い</span><span>${yen(f.total)}</span></div>`;
+    }
+
+    function openApply(id) {
+      const ev = state.data.events.find((e) => e.id === id);
+      if (!ev) return;
+      const isGuest = state.data.me.role === 'guest';
+      $('#apply-body').innerHTML = `
+        <h3>${esc(ev.title)}</h3>
+        <p class="meta">📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}　📍 ${esc(ev.venue)}</p>
+        <p style="font-weight:700;margin:0 0 6px">木陰のグランドルール</p>
+        <ul class="rules">
+          <li>人のことも自分のことも、評価・判断しない</li>
+          <li>アドバイスしない（ただ受け取り合う）</li>
+          <li>ここで聞いた話は、外に持ち出さない</li>
+          <li>安心して自分の内面とつながる時間を大切にする</li>
+        </ul>
+        <label class="check"><input type="checkbox" id="f-agree"><span><b>グランドルールに同意します</b>（必須）</span></label>
+        <label class="field"><span>紹介してくれた人・きっかけ（任意）</span><input type="text" id="f-ref" maxlength="100" placeholder="例）〇〇さんの紹介／〇〇さんのインスタを見て"></label>
+        ${isGuest ? `<label class="check"><input type="checkbox" id="f-share"><span>参加後に、Instagramや口コミで感想をシェアします（参加費から${yen(state.data.fees.discount)}割引）<br><span class="hint">シェアは強制ではありません。自分のペースでどうぞ。</span></span></label>` : `<p class="hint">${esc(state.data.me.roleLabel)}の方は、参加費なし・場所代のみです。</p>`}
+        <div class="fee" id="fee-box"></div>
+        <p class="hint" style="margin-bottom:12px">お支払いは当日会場でお願いします。開催日の3日前に、開催するかどうかをLINEでお知らせします。</p>
+        <button class="btn block" id="f-submit" disabled>申し込む</button>
+        <button class="btn ghost block" id="f-close" style="margin-top:10px">閉じる</button>`;
+      renderFee();
+      $('#f-agree').addEventListener('change', (e) => { $('#f-submit').disabled = !e.target.checked; });
+      if ($('#f-share')) $('#f-share').addEventListener('change', renderFee);
+      $('#f-close').addEventListener('click', closeSheet);
+      $('#f-submit').addEventListener('click', () => submitApply(ev));
+      $('#apply-sheet').classList.add('open');
+    }
+
+    function closeSheet() { $('#apply-sheet').classList.remove('open'); }
+    $('#apply-sheet').addEventListener('click', (e) => { if (e.target.id === 'apply-sheet') closeSheet(); });
+
+    async function submitApply(ev) {
+      const btn = $('#f-submit');
+      btn.disabled = true; btn.textContent = '送信中…';
+      try {
+        const res = await api('apply', {
+          eventId: ev.id,
+          agreed: $('#f-agree').checked,
+          referrer: $('#f-ref').value,
+          shareDeclared: $('#f-share') ? $('#f-share').checked : false
+        });
+        const sent = await sendTrigger(res.triggerText);
+        $('#apply-body').innerHTML = `
+          <div class="done">
+            <div class="leaf">🌿</div>
+            <h3>お申し込みありがとうございます</h3>
+            <p>『${esc(ev.title)}』<br>${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}</p>
+            <p><b>当日のお支払い：${yen(res.fee.total)}</b></p>
+            <p class="meta">${sent ? 'LINEのトークに確認メッセージをお送りしました。' : ''}開催日の3日前に、開催するかどうかをLINEでお知らせします。</p>
+            <div class="card" style="background:var(--main-pale);box-shadow:none">
+              <p style="margin-bottom:10px">急なお知らせや、日々の木陰の様子はInstagramでお届けしています。<br><b>ぜひ「ここち」をフォローしてくださいね。</b></p>
+              <a class="btn insta block" href="${esc(res.instagramUrl)}" target="_blank" rel="noopener">Instagramをフォローする</a>
+            </div>
+            <button class="btn ghost block" id="f-done">閉じる</button>
+          </div>`;
+        $('#f-done').addEventListener('click', async () => { closeSheet(); await refresh(); });
+      } catch (e) {
+        toast(e.message, true);
+        btn.disabled = false; btn.textContent = '申し込む';
+      }
+    }
+
+    async function cancel(id) {
+      const ev = state.data.events.find((e) => e.id === id);
+      if (!ev || !confirm(`『${ev.title}』（${ev.dateLabel}）をキャンセルしますか？`)) return;
+      try {
+        const res = await api('cancel', { eventId: id });
+        await sendTrigger(res.triggerText);
+        toast('キャンセルしました');
+        await refresh();
+      } catch (e) { toast(e.message, true); }
+    }
+
+    async function sendRequest() {
+      const text = $('#req-text').value.trim();
+      if (!text) { $('#req-text').classList.add('invalid'); return; }
+      const btn = $('#req-send'); btn.disabled = true;
+      try {
+        await api('request', { text });
+        $('#req-text').value = '';
+        toast('届けました。ありがとうございます🌿');
+      } catch (e) { toast(e.message, true); }
+      btn.disabled = false;
+    }
+
+    async function refresh() {
+      try { await load(); render(); } catch (e) { toast(e.message, true); }
+    }
+
+    (async function main() {
+      try {
+        if (!(await initLiff())) return;
+        await load();
+        render();
+        if (focusEventId) {
+          const ev = state.data.events.find((e) => e.id === focusEventId);
+          if (ev) {
+            state.tab = 'events'; render();
+            const el = document.getElementById('ev-' + ev.id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (!ev.mine && ev.remaining > 0) openApply(ev.id);
+          } else {
+            toast('その木陰は、いまは申し込みを受け付けていません');
+          }
+        }
+      } catch (e) {
+        $('#app').innerHTML = `<div class="empty">読み込めませんでした。<br>${esc(e.message)}</div>`;
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ images/ogp.jpg    … SNSシェア用画像（1200px幅）
 images/cards-spread.jpg … カードを並べた写真（カード紹介用、webp版あり）
 images/bg-*.webp  … Instagram投稿で使っている背景画像（各セクションの背景・動画のサムネイル）
 images/profile.jpg … ナビゲーターのプロフィール写真（webp版あり）
+kokage/           … 「木陰」の申込・運営システム（詳しくは kokage/README.md）
 ```
 
 ビルド不要です。`index.html` をブラウザで開けば表示できます。

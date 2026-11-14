@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>木陰｜運営メニュー</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#12838b">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap wide">
+    <header class="brand">
+      <p class="brand__name">木陰</p>
+      <p class="brand__sub">運営メニュー</p>
+    </header>
+
+    <nav class="tabs">
+      <button data-tab="create" class="active">木陰をつくる</button>
+      <button data-tab="events">イベント一覧</button>
+      <button data-tab="requests">テーマのお便り</button>
+    </nav>
+
+    <main id="app"><div class="loading"><div class="spinner"></div>読み込んでいます…</div></main>
+  </div>
+
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="config.js"></script>
+  <script src="common.js"></script>
+  <script src="poster.js"></script>
+  <script>
+  (function () {
+    const { initLiff, api, yen, esc, $, $$, toast } = Kokage;
+    const BACKGROUNDS = [
+      { id: 'tree', src: '../images/bg-tree.webp' },
+      { id: 'window', src: '../images/bg-window.webp' },
+      { id: 'table', src: '../images/bg-table.webp' },
+      { id: 'cards', src: '../images/bg-cards.webp' }
+    ];
+    const S = {
+      tab: 'create', data: null,
+      form: null, bgId: 'tree', bgImg: null, uploadImg: null, format: 'post',
+      generating: false, published: null, eventFilter: 'upcoming'
+    };
+
+    $$('.tabs button').forEach((b) => b.addEventListener('click', () => { S.tab = b.dataset.tab; render(); }));
+
+    const WD = ['日', '月', '火', '水', '木', '金', '土'];
+    function dateLabel(iso) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+      if (!m) return '';
+      const d = new Date(+m[1], +m[2] - 1, +m[3]);
+      return `${+m[2]}月${+m[3]}日（${WD[d.getDay()]}）`;
+    }
+    function addHours(t, h) {
+      const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
+      if (!m) return '';
+      const total = +m[1] * 60 + +m[2] + h * 60;
+      return String(Math.floor(total / 60) % 24).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+    }
+    function minDate() {
+      const c = S.data.config;
+      const d = new Date();
+      // 判定時刻（N日前の◯時）が未来になる最初の日
+      d.setDate(d.getDate() + c.daysBefore + (d.getHours() >= c.hour ? 1 : 0));
+      return localIso(d);
+    }
+    function localIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
+    function blankForm() {
+      const c = S.data.config;
+      return { hostId: '', idea: '', date: '', start: c.start, venue: c.venue, max: c.max, title: '', description: '', body: '', sourceEventId: '', sourceTitle: '' };
+    }
+
+    function captionInfo(f) {
+      const c = S.data.config;
+      const end = addHours(f.start, c.duration);
+      return [
+        '──────────',
+        `🌿 木陰『${f.title || ''}』`,
+        `📅 ${dateLabel(f.date)} ${f.start}〜${end}`,
+        `📍 ${f.venue}`,
+        `💴 はじめての方 ${yen(c.fees.first + c.fees.venue)}／2回目以降 ${yen(c.fees.regular + c.fees.venue)}（場所代${yen(c.fees.venue)}込み）`,
+        `　 参加後に感想をシェアしてくださる方は${yen(c.fees.discount)}引き`,
+        `　 ライフクエスト・インナークエストの仲間は場所代のみ`,
+        '🕊 開催日の3日前に、開催が決まったらLINEでお知らせします',
+        '',
+        `お申し込みは ${c.instagramHandle} のプロフィールのリンク（公式LINE）から`,
+        '',
+        '#木陰 #ここち #内面探求 #自己理解 #痛みと願いカード #ひたちなか #イバフォルニアベース'
+      ].join('\n');
+    }
+    const fullCaption = (f) => (f.body ? f.body.trim() + '\n\n' : '') + captionInfo(f);
+
+    // ---------- 画面 ----------
+    function render() {
+      $$('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === S.tab));
+      if (S.tab === 'create') renderCreate();
+      else if (S.tab === 'events') renderEvents();
+      else renderRequests();
+    }
+
+    function renderCreate() {
+      const f = S.form;
+      const c = S.data.config;
+      const hosts = S.data.hosts;
+      const times = [];
+      for (let m = 9 * 60; m <= 18 * 60; m += 30) times.push(String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'));
+
+      $('#app').innerHTML = `
+        ${S.published ? `
+          <div class="card" style="border:2px solid var(--main)">
+            <h3>🌿 公開しました。募集がはじまりました</h3>
+            <p class="meta">画像を保存し、下の投稿文をコピーして、ここちのInstagramに投稿してください（ホストのメンバーを共同投稿者／メンションに）。${S.published.invited ? `<br>前回申し込んでくれた一般の方 ${S.published.invited}名に、特別ご案内のLINEを送りました。` : ''}</p>
+            <div class="copy-row"><input type="text" readonly value="${esc(S.published.link)}"><button class="btn small" data-copy="${esc(S.published.link)}">申込リンクをコピー</button></div>
+            <button class="btn ghost small" id="new-form" style="margin-top:12px">新しい木陰をつくる</button>
+          </div>` : ''}
+        ${f.sourceEventId ? `<div class="banner">『${esc(f.sourceTitle)}』を<b>別日で再企画</b>しています。公開すると、前回申し込んでくれた一般の方へ特別ご案内のLINEが自動で届きます。</div>` : ''}
+        <div class="grid2">
+          <section>
+            <div class="card">
+              <h3>① 企画の中身（打ち合わせしながら入力）</h3>
+              <label class="field"><span>ホスト（ライフクエストのメンバー）</span>
+                <select id="f-host">
+                  <option value="">ホストなし（運営が開く）</option>
+                  ${hosts.map((h) => `<option value="${esc(h.id)}" ${h.id === f.hostId ? 'selected' : ''}>${esc(h.name)}（${esc(h.role)}）</option>`).join('')}
+                </select>
+                ${hosts.length ? '' : '<p class="hint">名簿の「区分」を「LQメンバー」にすると、ここに表示されます。</p>'}
+              </label>
+              <label class="field"><span>企画のテーマ・やりたいこと・想い<span class="req">必須</span></span>
+                <textarea id="f-idea" rows="6" placeholder="思いつくままに、たらたら書いてOK。例）人の目を気にして疲れちゃう人と、痛みと願いカードで自分の願いを見つける時間にしたい">${esc(f.idea)}</textarea></label>
+              <div class="row">
+                <label class="field"><span>開催日<span class="req">必須</span></span><input type="date" id="f-date" min="${minDate()}" value="${esc(f.date)}"></label>
+                <label class="field"><span>開始時間<span class="req">必須</span>（${c.duration}時間）</span>
+                  <select id="f-start">${times.map((t) => `<option ${t === f.start ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+              </div>
+              <p class="hint" id="f-timeinfo" style="margin-top:-6px;margin-bottom:12px"></p>
+              <div class="row">
+                <label class="field"><span>場所<span class="req">必須</span></span><input type="text" id="f-venue" value="${esc(f.venue)}"></label>
+                <label class="field"><span>定員（ホスト含む）<span class="req">必須</span></span><input type="number" id="f-max" min="${c.minTotal}" max="30" value="${esc(f.max)}"></label>
+              </div>
+              <button class="btn block" id="f-gen">${S.generating ? '<span class="spinner" style="width:18px;height:18px;margin:0;border-width:2px"></span> AIが木陰の言葉を紡いでいます…' : '✨ AIで文章をつくる'}</button>
+            </div>
+
+            <div class="card">
+              <h3>② 文章を一緒に整える</h3>
+              <label class="field"><span>タイトル<span class="req">必須</span>（20文字くらい）</span><input type="text" id="f-title" value="${esc(f.title)}"></label>
+              <label class="field"><span>案内文<span class="req">必須</span>（画像と申込画面に載ります）</span><textarea id="f-desc" rows="3">${esc(f.description)}</textarea></label>
+              <label class="field"><span>Instagram投稿の本文</span><textarea id="f-body" rows="6">${esc(f.body)}</textarea></label>
+              <details><summary>日時・料金・ハッシュタグ入りの投稿文（自動で組み立て）</summary>
+                <textarea id="f-caption" rows="14" readonly style="margin-top:8px;font-size:13px"></textarea>
+              </details>
+              <button class="btn ghost small" id="f-copycap" style="margin-top:10px">投稿文をコピー</button>
+            </div>
+          </section>
+
+          <section>
+            <div class="card">
+              <h3>③ 画像</h3>
+              <div class="seg" id="f-format">
+                <button data-format="post" class="${S.format === 'post' ? 'active' : ''}">投稿 4:5</button>
+                <button data-format="story" class="${S.format === 'story' ? 'active' : ''}">ストーリーズ 9:16</button>
+              </div>
+              <div class="bg-list" id="f-bgs">
+                ${BACKGROUNDS.map((b) => `<button data-bg="${b.id}" class="${S.bgId === b.id ? 'active' : ''}" style="background-image:url('${b.src}')" aria-label="背景 ${b.id}"></button>`).join('')}
+                <button data-bg="upload" class="${S.bgId === 'upload' ? 'active' : ''}" style="${S.uploadImg ? `background-image:url('${S.uploadImg.src}')` : ''}">${S.uploadImg ? '' : '＋写真を<br>選ぶ'}</button>
+              </div>
+              <input type="file" id="f-file" accept="image/*" hidden>
+              <p class="hint">どの写真を選んでも、木陰の枠が必ず重なります。</p>
+              <canvas id="poster" class="preview"></canvas>
+              <div class="toolbar" style="margin-top:12px">
+                <button class="btn" id="f-download">画像を保存</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>④ 公開して募集をはじめる</h3>
+              <p class="meta">公開すると申込画面に並び、${c.daysBefore}日前の${c.hour}時に「合計${c.minTotal}名以上・一般${c.minGuest}名以上」で開催かどうかが自動で決まります。${f.hostId ? 'ホストは自動で参加者に登録されます（場所代のみ）。' : ''}</p>
+              <ul class="hint" id="f-missing" style="color:var(--warn)"></ul>
+              <button class="btn block" id="f-publish">公開して募集開始</button>
+            </div>
+          </section>
+        </div>`;
+
+      bindCreate();
+      syncForm();
+      redraw();
+    }
+
+    function readForm() {
+      const f = S.form;
+      f.hostId = $('#f-host').value;
+      f.idea = $('#f-idea').value;
+      f.date = $('#f-date').value;
+      f.start = $('#f-start').value;
+      f.venue = $('#f-venue').value.trim();
+      f.max = Number($('#f-max').value);
+      f.title = $('#f-title').value.trim();
+      f.description = $('#f-desc').value.trim();
+      f.body = $('#f-body').value;
+    }
+
+    function missingFields() {
+      const f = S.form;
+      const miss = [];
+      if (!f.idea.trim()) miss.push(['#f-idea', '企画のテーマ・想い']);
+      if (!f.date) miss.push(['#f-date', '開催日']);
+      else if (f.date < minDate()) miss.push(['#f-date', `開催日（${S.data.config.daysBefore}日前の判定が過ぎない日付に）`]);
+      if (!f.start) miss.push(['#f-start', '開始時間']);
+      if (!f.venue) miss.push(['#f-venue', '場所']);
+      if (!f.max || f.max < S.data.config.minTotal) miss.push(['#f-max', `定員（${S.data.config.minTotal}名以上）`]);
+      if (!f.title) miss.push(['#f-title', 'タイトル']);
+      if (!f.description) miss.push(['#f-desc', '案内文']);
+      return miss;
+    }
+
+    function syncForm() {
+      readForm();
+      const f = S.form;
+      const c = S.data.config;
+      $('#f-timeinfo').textContent = f.date ? `${dateLabel(f.date)} ${f.start}〜${addHours(f.start, c.duration)}（前半2時間コアタイム＋後半1時間フリータイム）` : '';
+      $('#f-caption').value = fullCaption(f);
+      const miss = missingFields();
+      $$('.invalid').forEach((el) => el.classList.remove('invalid'));
+      $('#f-missing').innerHTML = miss.map((m) => `<li>${esc(m[1])}が未入力です</li>`).join('');
+      $('#f-publish').disabled = miss.length > 0;
+    }
+
+    let redrawTimer;
+    function redraw() {
+      clearTimeout(redrawTimer);
+      redrawTimer = setTimeout(async () => {
+        if (!$('#poster')) return;
+        const f = S.form;
+        const bg = S.bgId === 'upload' ? S.uploadImg : S.bgImg;
+        await KokagePoster.draw($('#poster'), {
+          format: S.format, bg,
+          title: f.title || 'タイトル', description: f.description || '案内文がここに入ります',
+          dateLabel: f.date ? dateLabel(f.date) : '開催日', time: `${f.start}〜${addHours(f.start, S.data.config.duration)}`,
+          venue: f.venue, handle: S.data.config.instagramHandle
+        });
+      }, 250);
+    }
+
+    async function selectBg(id) {
+      S.bgId = id;
+      const b = BACKGROUNDS.find((x) => x.id === id);
+      S.bgImg = b ? await KokagePoster.loadImage(b.src).catch(() => null) : null;
+      $$('#f-bgs button').forEach((el) => el.classList.toggle('active', el.dataset.bg === id));
+      redraw();
+    }
+
+    function bindCreate() {
+      ['#f-host', '#f-idea', '#f-date', '#f-start', '#f-venue', '#f-max', '#f-title', '#f-desc', '#f-body'].forEach((sel) => {
+        $(sel).addEventListener('input', () => { syncForm(); redraw(); });
+        $(sel).addEventListener('change', () => { syncForm(); redraw(); });
+      });
+      $('#f-gen').addEventListener('click', generate);
+      $('#f-copycap').addEventListener('click', () => copy(fullCaption(S.form), '投稿文をコピーしました'));
+      $$('#f-format button').forEach((b) => b.addEventListener('click', () => {
+        S.format = b.dataset.format;
+        $$('#f-format button').forEach((x) => x.classList.toggle('active', x === b));
+        redraw();
+      }));
+      $$('#f-bgs button').forEach((b) => b.addEventListener('click', () => {
+        if (b.dataset.bg === 'upload') { $('#f-file').click(); return; }
+        selectBg(b.dataset.bg);
+      }));
+      $('#f-file').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+          S.uploadImg = await KokagePoster.loadImage(reader.result);
+          S.bgId = 'upload';
+          readForm(); renderCreate();
+        };
+        reader.readAsDataURL(file);
+      });
+      $('#f-download').addEventListener('click', download);
+      $('#f-publish').addEventListener('click', publish);
+      if ($('#new-form')) $('#new-form').addEventListener('click', () => { S.published = null; S.form = blankForm(); renderCreate(); });
+      $$('[data-copy]').forEach((b) => b.addEventListener('click', () => copy(b.dataset.copy, 'コピーしました')));
+    }
+
+    async function generate() {
+      readForm();
+      if (!S.form.idea.trim()) { $('#f-idea').classList.add('invalid'); toast('企画のテーマ・想いを入力してください', true); return; }
+      if (S.generating) return;
+      if ((S.form.title || S.form.description || S.form.body) && !confirm('いまのタイトル・案内文・本文を、AIの新しい案で置き換えますか？')) return;
+      S.generating = true; renderCreate();
+      try {
+        const host = S.data.hosts.find((h) => h.id === S.form.hostId);
+        const res = await api('admin.generate', { idea: S.form.idea, hostName: host ? host.name : '' });
+        S.form.title = res.copy.title;
+        S.form.description = res.copy.description;
+        S.form.body = res.copy.caption;
+      } catch (e) { toast(e.message, true); }
+      S.generating = false; renderCreate();
+    }
+
+    function download() {
+      const canvas = $('#poster');
+      const name = `kokage_${S.form.date || 'draft'}_${S.format}.png`;
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        toast('画像を保存しました（スマホでうまく保存できない場合は、画像を長押ししてください）');
+      }, 'image/png');
+    }
+
+    async function publish() {
+      syncForm();
+      const miss = missingFields();
+      if (miss.length) { miss.forEach((m) => $(m[0]).classList.add('invalid')); return; }
+      const f = S.form;
+      if (!confirm(`『${f.title}』\n${dateLabel(f.date)} ${f.start}〜\nこの内容で公開して、募集をはじめますか？`)) return;
+      const btn = $('#f-publish'); btn.disabled = true; btn.textContent = '公開しています…';
+      try {
+        const res = await api('admin.createEvent', {
+          hostId: f.hostId, idea: f.idea, date: f.date, start: f.start, venue: f.venue, max: f.max,
+          title: f.title, description: f.description, caption: fullCaption(f), sourceEventId: f.sourceEventId
+        });
+        S.published = res;
+        S.form.sourceEventId = ''; S.form.sourceTitle = '';
+        toast('公開しました🌿');
+        S.data = await api('admin.overview');
+        renderCreate();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        toast(e.message, true);
+        btn.disabled = false; btn.textContent = '公開して募集開始';
+      }
+    }
+
+    // ---------- イベント一覧 ----------
+    function badge(status) {
+      const cls = { '開催決定': 'go', '中止': 'cancel', '終了': 'done' }[status] || '';
+      return `<span class="badge ${cls}">${esc(status)}</span>`;
+    }
+
+    function renderEvents() {
+      const d = S.data;
+      const today = localIso(new Date());
+      const list = d.events.filter((e) => S.eventFilter === 'all' || e.date >= today || e.status === '募集中' || e.status === '開催決定');
+      $('#app').innerHTML = `
+        <div class="toolbar" style="margin-bottom:14px">
+          <div class="seg" style="margin:0">
+            <button data-f="upcoming" class="${S.eventFilter === 'upcoming' ? 'active' : ''}">これから</button>
+            <button data-f="all" class="${S.eventFilter === 'all' ? 'active' : ''}">すべて</button>
+          </div>
+          <span class="stat">今月のLINE自動送信（Push）：${d.pushCount} / ${d.pushLimit}通</span>
+          <a class="btn ghost small" href="${esc(d.spreadsheetUrl)}" target="_blank" rel="noopener">スプレッドシートを開く</a>
+          <button class="btn ghost small" id="reload">最新にする</button>
+        </div>
+        ${list.length ? list.map(eventAdminCard).join('') : '<div class="empty">イベントはまだありません。</div>'}`;
+      $$('[data-f]').forEach((b) => b.addEventListener('click', () => { S.eventFilter = b.dataset.f; renderEvents(); }));
+      $('#reload').addEventListener('click', reload);
+      $$('[data-copy]').forEach((b) => b.addEventListener('click', () => copy(b.dataset.copy, 'コピーしました')));
+      $$('[data-replan]').forEach((b) => b.addEventListener('click', () => replan(b.dataset.replan)));
+    }
+
+    function eventAdminCard(ev) {
+      const c = ev.counts;
+      const cfg = S.data.config;
+      const okTotal = c.total >= cfg.minTotal, okGuest = c.guests >= cfg.minGuest;
+      const regs = ev.registrations;
+      const sales = regs.filter((r) => r.status === '申込').reduce((s, r) => s + r.fee, 0);
+      return `
+        <article class="card">
+          <div class="badges">${badge(ev.status)}${ev.sourceEventId ? '<span class="badge">再企画</span>' : ''}</div>
+          <h3>${esc(ev.title)}</h3>
+          <div class="meta">
+            <div>📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}　📍 ${esc(ev.venue)}</div>
+            <div>🌿 ホスト：${esc(ev.host || 'なし')}　／　定員 ${ev.max}名</div>
+            ${ev.status === '募集中' ? `<div>⏰ 開催判定：${esc(ev.decisionLabel)}</div>` : ''}
+          </div>
+          <div class="counts">
+            合計 <b>${c.total}</b>名 ${okTotal ? '✅' : `（あと${cfg.minTotal - c.total}名）`}
+            一般 <b>${c.guests}</b>名 ${okGuest ? '✅' : `（あと${cfg.minGuest - c.guests}名）`}
+            メンバー ${c.members}名　／　当日集金予定 ${yen(sales)}
+          </div>
+          <div class="copy-row" style="margin-bottom:8px"><input type="text" readonly value="${esc(ev.link)}"><button class="btn small ghost" data-copy="${esc(ev.link)}">申込リンク</button></div>
+          ${ev.status === '中止' ? `<button class="btn small" data-replan="${esc(ev.id)}">別日で再企画する</button>` : ''}
+          <details style="margin-top:8px"><summary>申込者（${regs.length}件）</summary>
+            ${regs.length ? `<table class="regs"><thead><tr><th>名前</th><th>区分</th><th>当日</th><th>初回</th><th>シェア</th><th>紹介・きっかけ</th></tr></thead><tbody>
+              ${regs.map((r) => `<tr class="${r.status === 'キャンセル' ? 'cancelled' : ''}"><td>${esc(r.name)}</td><td>${esc(r.type)}</td><td>${yen(r.fee)}</td><td>${r.first ? '○' : ''}</td><td>${r.share ? '○' : ''}</td><td>${esc(r.referrer)}</td></tr>`).join('')}
+            </tbody></table>` : '<p class="hint">まだ申込はありません。</p>'}
+          </details>
+        </article>`;
+    }
+
+    function replan(id) {
+      const ev = S.data.events.find((e) => e.id === id);
+      if (!ev) return;
+      S.form = Object.assign(blankForm(), {
+        hostId: ev.hostId || '', idea: ev.rawIdea || '', venue: ev.venue, max: ev.max, start: ev.start,
+        title: ev.title, description: ev.description, body: String(ev.caption || '').split('──────────')[0].trim(),
+        sourceEventId: ev.id, sourceTitle: ev.title
+      });
+      S.published = null;
+      S.tab = 'create';
+      render();
+      window.scrollTo({ top: 0 });
+      toast('新しい開催日を選んで公開してください');
+    }
+
+    function renderRequests() {
+      const reqs = S.data.requests;
+      $('#app').innerHTML = reqs.length
+        ? `<p class="hint" style="margin-bottom:12px">一般の方から届いた「木陰で扱ってほしいテーマ」です。メンバーとの打ち合わせのヒントに。</p>` +
+          reqs.map((r) => `<div class="card"><p class="meta">${esc(r.at)}　${esc(r.name)}</p><p style="margin:0;white-space:pre-wrap">${esc(r.text)}</p></div>`).join('')
+        : '<div class="empty">まだお便りはありません。</div>';
+    }
+
+    async function copy(text, msg) {
+      try { await navigator.clipboard.writeText(text); toast(msg); }
+      catch (e) { prompt('コピーしてください', text); }
+    }
+
+    async function reload() {
+      try { S.data = await api('admin.overview'); render(); toast('最新にしました'); } catch (e) { toast(e.message, true); }
+    }
+
+    (async function main() {
+      try {
+        if (!(await initLiff())) return;
+        S.data = await api('admin.overview');
+        S.form = blankForm();
+        await selectBg('tree').catch(() => {});
+        render();
+      } catch (e) {
+        $('#app').innerHTML = `<div class="card empty">${esc(e.message)}<br><br><span class="hint">運営メンバーとして登録するには、公式LINEのトークで「ID」と送ると届くユーザーIDを、Apps Script のスクリプト プロパティ ADMIN_LINE_USER_IDS に追加してください。</span></div>`;
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>
