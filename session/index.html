@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>痛みと願いカード セッションボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --main:#12838b; --main-deep:#0a4a4f; --main-pale:#e3f1f1;
+  --wood:#f6efe6; --wood-2:#eadfd0; --ink:#2c3a3b; --ink-soft:#6a7879;
+  --gold:#f2a03d; --selc:#2d6cdf; --guide:#c98a72;
+  --round:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  --sans:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;font-family:var(--sans);color:var(--ink);background:var(--wood);overflow:hidden;-webkit-user-select:none;user-select:none}
+button,input{font:inherit;color:inherit}
+
+/* ---------- top bars ---------- */
+.bar{display:flex;align-items:center;gap:10px;padding:5px 12px;background:#fff;border-bottom:1px solid #e2d8ca;flex:none;flex-wrap:wrap}
+.bar.tools{background:#fbf8f3;gap:6px}
+.brand{font-weight:700;color:var(--main-deep);letter-spacing:.06em;white-space:nowrap}
+#name{border:1px solid transparent;border-radius:6px;padding:4px 8px;width:230px;background:transparent;-webkit-user-select:text;user-select:text}
+#name:hover,#name:focus{border-color:#cfc4b4;background:#fff;outline:none}
+.sp{flex:1}
+.seg{display:flex;border:1px solid #cfc4b4;border-radius:8px;overflow:hidden;background:#fff}
+.seg button{border:0;background:none;padding:5px 14px;cursor:pointer;font-weight:700;color:var(--ink-soft);white-space:nowrap}
+.seg button+button{border-left:1px solid #e2d8ca}
+.seg button.on{background:var(--main);color:#fff}
+.seg.small button{padding:4px 10px;font-weight:500;font-size:.88rem}
+.btn{border:1px solid #cfc4b4;background:#fff;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:.88rem;white-space:nowrap}
+.btn:hover{background:var(--main-pale)}
+.btn.on{background:var(--main);color:#fff;border-color:var(--main)}
+.btn kbd{font-family:inherit;font-size:.72rem;opacity:.55;margin-left:4px}
+.btn.hlb{border-color:var(--gold);color:#a9620c}
+.div{width:1px;height:22px;background:#d9cebd;margin:0 4px}
+#zoomv{min-width:46px;text-align:center;font-size:.82rem;color:var(--ink-soft)}
+
+/* ---------- stage ---------- */
+#stage{flex:1;display:flex;min-height:0}
+.deck{flex:1;display:none;min-width:0;min-height:0}
+#stage.view-pain .deck[data-deck=pain],#stage.view-wish .deck[data-deck=wish],#stage.view-both .deck{display:flex}
+#stage.view-both .deck+.deck{border-left:3px solid #d9cebd}
+.gridwrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--wood-2);min-width:0;min-height:0;overflow:hidden}
+.board{flex:1;position:relative;overflow:hidden;min-width:0;background:var(--wood);touch-action:none;cursor:default}
+#stage.lay-split .gridwrap{flex:0 0 54%;border-right:1px solid #d9cebd}
+#stage.lay-grid .board{display:none}
+#stage.lay-board .gridwrap,#stage.view-both .gridwrap{display:none}
+#stage.view-both .board{display:block}
+
+/* ---------- card ---------- */
+.card{width:calc(200*var(--u));height:calc(128*var(--u));border-radius:calc(13*var(--u));font-family:var(--round);font-weight:700;
+  box-shadow:0 calc(2*var(--u)) calc(7*var(--u)) rgba(70,45,20,.25);line-height:1.28;text-align:center;white-space:nowrap;cursor:pointer}
+.card .txt{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.card.pain{background:#12838b;color:#fff}
+.card.wish{background:#fcfbf8;color:#12838b}
+/* 予備カード・書き換えカード：色味を少し変え、内側に点線 */
+.card.custom{position:relative}
+.card.custom::after{content:"";position:absolute;inset:calc(7*var(--u));border:calc(2*var(--u)) dashed currentColor;opacity:.6;border-radius:calc(8*var(--u));pointer-events:none}
+.card.pain.custom{background:#3a9fa6}
+.card.wish.custom{background:#fdf1d6}
+
+/* ---------- grid ---------- */
+.grid{display:grid;grid-template-columns:calc(70*var(--u)) repeat(8,calc(200*var(--u)));grid-template-rows:calc(60*var(--u));grid-auto-rows:calc(128*var(--u));gap:calc(14*var(--u))}
+.gl{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:calc(34*var(--u));color:#fff;background:var(--guide);border-radius:calc(10*var(--u))}
+.grid .card{transition:transform .12s,opacity .15s}
+.grid .card:hover{transform:translateY(calc(-3*var(--u))) scale(1.03)}
+.grid .card.taken{opacity:.2;box-shadow:none}
+.slot-add{border:calc(3*var(--u)) dashed var(--main);border-radius:calc(13*var(--u));display:flex;align-items:center;justify-content:center;color:var(--main);font-weight:700;font-size:calc(22*var(--u));cursor:pointer;background:rgba(255,255,255,.4)}
+.slot-add:hover{background:#fff}
+
+/* ---------- board ---------- */
+.world{position:absolute;left:0;top:0;transform-origin:0 0;--u:1px}
+.world .card,.frame,.note{position:absolute}
+.world .card{cursor:grab}
+.sel{outline:3px solid var(--selc);outline-offset:4px}
+.card.hl{box-shadow:0 0 0 6px var(--gold),0 0 30px 8px rgba(242,160,61,.8);transform:scale(1.1)}
+.card .txt.edit{display:block;height:auto;font-size:26px;white-space:pre-wrap;outline:none;cursor:text;min-height:1.3em;-webkit-user-select:text;user-select:text}
+.card:has(.edit){display:flex;align-items:center}
+.frame{border:3px dashed #a9967c;border-radius:18px;background:rgba(255,255,255,.28);pointer-events:none}
+.frame.hl{border-color:var(--gold);border-style:solid;border-width:5px}
+.frame .txt{position:absolute;left:14px;top:-20px;pointer-events:auto;background:#8a765c;color:#fff;font-weight:700;font-size:20px;padding:3px 14px;border-radius:9px;cursor:grab;white-space:nowrap;min-width:60px;min-height:36px;outline:none}
+.frame .rz{position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:#8a765c;border:3px solid #fff;pointer-events:auto;cursor:nwse-resize}
+.note{font-size:21px;font-weight:700;line-height:1.4;color:var(--ink);background:rgba(255,255,255,.8);padding:5px 12px;border-radius:8px;white-space:pre;cursor:grab;min-width:40px;min-height:40px}
+.note.hl{background:#ffe3b5;box-shadow:0 0 0 3px var(--gold)}
+.note .txt{outline:none;min-width:20px;display:block}
+[contenteditable]{-webkit-user-select:text;user-select:text;cursor:text}
+svg.arrows{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+svg.arrows .hit{stroke:transparent;stroke-width:22;fill:none;pointer-events:stroke;cursor:pointer}
+svg.arrows .ln{stroke:#3d4b4c;stroke-width:5;fill:none;stroke-linecap:round}
+svg.arrows .hd{fill:#3d4b4c}
+svg.arrows .s .ln{stroke:var(--selc)} svg.arrows .s .hd{fill:var(--selc)}
+svg.arrows .tmp{stroke:var(--selc);stroke-width:4;stroke-dasharray:8 6}
+.marq{position:absolute;border:1.5px solid var(--selc);background:rgba(45,108,223,.1);pointer-events:none}
+.blabel{position:absolute;left:12px;top:10px;padding:3px 14px;border-radius:999px;font-weight:700;letter-spacing:.1em;background:rgba(255,255,255,.85);color:var(--main-deep);border:2px solid transparent;pointer-events:none}
+#stage.view-both .deck.active .blabel{border-color:var(--main)}
+body.tool-arrow .board,body.tool-arrow .world .card,body.tool-arrow .note{cursor:crosshair}
+body.panning .board,body.panning .board *{cursor:grabbing!important}
+
+#help{position:fixed;right:14px;top:92px;width:360px;background:#fff;border:1px solid #cfc4b4;border-radius:12px;padding:14px 18px;box-shadow:0 8px 30px rgba(0,0,0,.18);font-size:.86rem;line-height:1.75;z-index:50}
+#help h3{margin:0 0 6px;font-size:.95rem;color:var(--main-deep)}
+#help ul{margin:0;padding-left:1.2em}
+#help b{color:var(--main-deep)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="brand">痛みと願いカード</span>
+  <input id="name" placeholder="セッション名（例：〇〇さん）" autocomplete="off">
+  <span class="sp"></span>
+  <div class="seg" id="views">
+    <button data-view="pain">痛み</button>
+    <button data-view="wish">願い</button>
+    <button data-view="both">痛み ｜ 願い</button>
+  </div>
+  <div class="seg small" id="layouts">
+    <button data-lay="grid">一覧</button>
+    <button data-lay="split">一覧＋ボード</button>
+    <button data-lay="board">ボード</button>
+  </div>
+  <span class="sp"></span>
+  <button class="btn" id="bPng">画像で保存</button>
+  <button class="btn" id="bSave">ファイル保存</button>
+  <button class="btn" id="bLoad">読込</button>
+  <button class="btn" id="bNew">新規</button>
+  <button class="btn" id="bHelp">？</button>
+  <input type="file" id="file" accept=".json,application/json" hidden>
+</div>
+
+<div class="bar tools">
+  <button class="btn" data-tool="select">選択<kbd>V</kbd></button>
+  <button class="btn" data-tool="arrow">→ 矢印<kbd>A</kbd></button>
+  <span class="div"></span>
+  <button class="btn" id="bCard">＋ 予備カード<kbd>N</kbd></button>
+  <button class="btn" id="bFrame">＋ 枠<kbd>G</kbd></button>
+  <button class="btn" id="bNote">＋ メモ<kbd>T</kbd></button>
+  <span class="div"></span>
+  <button class="btn hlb" id="bHl">★ 強調<kbd>H</kbd></button>
+  <button class="btn" id="bDel">削除<kbd>Del</kbd></button>
+  <span class="div"></span>
+  <button class="btn" id="bUndo" title="Ctrl+Z">↶ 戻す</button>
+  <button class="btn" id="bRedo" title="Ctrl+Shift+Z">↷</button>
+  <span class="sp"></span>
+  <button class="btn" id="bZo">−</button><span id="zoomv">100%</span><button class="btn" id="bZi">＋</button>
+  <button class="btn" id="bFit">全体表示<kbd>F</kbd></button>
+</div>
+
+<div id="stage">
+  <div class="deck" data-deck="pain"><div class="gridwrap"><div class="grid"></div></div><div class="board"></div></div>
+  <div class="deck" data-deck="wish"><div class="gridwrap"><div class="grid"></div></div><div class="board"></div></div>
+</div>
+
+<div id="help" hidden>
+  <h3>操作ガイド</h3>
+  <ul>
+    <li><b>カードを選ぶ</b>：一覧のカードをクリック → ボードへ。もう一度クリックで一覧に戻る</li>
+    <li><b>動かす</b>：ドラッグ。Shift+クリック／何もない所をドラッグで複数選択</li>
+    <li><b>矢印</b>：「矢印」を選び、カードからカードへドラッグ（カードに追従）</li>
+    <li><b>文字を書き換える</b>：カード・枠名・メモをダブルクリック（改行可、Escで確定）</li>
+    <li><b>予備カード</b>：何枚でも追加可。点線の内枠つきで表示</li>
+    <li><b>強調</b>：選択して「★強調」または H キー</li>
+    <li><b>枠</b>：名前のラベルをドラッグで中のカードごと移動。右下の丸でサイズ変更</li>
+    <li><b>削除</b>：Delete キー（元のカードは一覧に戻ります）</li>
+    <li><b>画面移動</b>：ホイール／Space+ドラッグ／右ドラッグ。<b>拡大縮小</b>：Ctrl+ホイール</li>
+    <li>内容はこのブラウザに自動保存されます</li>
+  </ul>
+</div>
+
+<script>
+/* =====================================================================
+   カードの文言（ここを書き換えればカードを修正できます）
+   1行 = A〜Gの各行、左から 1〜8。 "|" はカード内の改行。'' は空きマス。
+   ===================================================================== */
+const DECKS = {
+  pain: { label: '痛み', rows: [
+    ['失敗','未達成|敗北','無駄|報われない','妥協','無責任|不誠実','枯渇|消耗','コントロール不可','暴走'],
+    ['停滞|閉塞','キャパオーバー','老い|衰え','対立|不調和','誤解','傷つける|不快にする','制限|支配される','搾取される|利用される'],
+    ['依存','不公平|理不尽','平凡','つまらない|人間/人生','不要|役割の喪失','本性/偽装|の露呈','異常|異物','自分への嘘'],
+    ['忘却|埋没','自己崩壊','期待外れ|ガッカリ','認められない','責められる','見下される|軽く見られる','粗末に|扱われる','嫉妬される'],
+    ['踏み込まれる','嫌われる|迷惑','排除|拒絶','無関心|放置','分離|断絶','裏切り','わかられない|受け取られない','頼れない'],
+    ['無価値','無力','存在意義|の喪失','空っぽ','孤独','絶望','愛されない','存在の否定'],
+    ['見捨てられる|見切られる','魅力が無い','居場所|の喪失','できない|不十分|未熟','欠陥|ポンコツ|劣等','惨め','ゆるされない|原罪感',''],
+  ]},
+  wish: { label: '願い', rows: [
+    ['共感','受容','理解','尊重','思いやり','信頼','所属','愛'],
+    ['感謝','親密さ','つながり','支え|協力','関心','循環|相互性','自由|選択','自律'],
+    ['スペース','自発性','自分に本物|であること','言行一致|誠実さ','自己表現','意味|目的','貢献','成長'],
+    ['探求|発見','創造性','ニーズを|満たす力','効力感|達成','明確さ','嘆き|悼み','インスピレーション|直感','平和|調和'],
+    ['ただ在ること','流れ|フロー','秩序','公平|対等','美','身体の|安全','安心','休息'],
+    ['尊厳','ふれあい','活力|いのちの躍動','希望','安らげる|居場所','遊び|気軽さ','喜び','祝福'],
+    ['挑戦|刺激','仲間','ゆるし','承認','共鳴|一体感','境界線','無防備さ',''],
+  ]},
+};
+const ROWS = 'ABCDEFG';
+const CW = 200, CH = 128, KEY = 'itami-negai-session-v1';
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let _n = 0; const uid = () => 'i' + Date.now().toString(36) + (_n++).toString(36);
+const deckLines = (deck, k) => DECKS[deck].rows.flat()[k].split('|');
+const lenOf = s => { let n = 0; for (const ch of s) n += ch.charCodeAt(0) < 0x2000 ? 0.56 : 1; return n; };
+function lineSizes(lines) {
+  const base = [36, 36, 30, 24, 20][Math.min(lines.length, 4)];
+  return lines.map(l => Math.min(base, 170 / Math.max(lenOf(l), 1)));
+}
+function cardInner(lines) {
+  const sz = lineSizes(lines);
+  return '<div class="txt">' + lines.map((l, i) => `<div style="font-size:calc(var(--u)*${sz[i].toFixed(1)})">${esc(l)}</div>`).join('') + '</div>';
+}
+function track(move, up) {
+  const u = e => { removeEventListener('pointermove', move); removeEventListener('pointerup', u); removeEventListener('pointercancel', u); up && up(e); };
+  addEventListener('pointermove', move); addEventListener('pointerup', u); addEventListener('pointercancel', u);
+}
+
+/* ---------- state ---------- */
+const blank = () => ({ name: '', boards: { pain: { items: [], arrows: [] }, wish: { items: [], arrows: [] } } });
+let state = blank();
+const ui = { view: 'pain', layout: 'split', tool: 'select', active: 'pain' };
+try {
+  const s = JSON.parse(localStorage.getItem(KEY));
+  if (s && s.state && s.state.boards) { state = s.state; Object.assign(ui, s.ui || {}); ui.tool = 'select'; }
+} catch (e) {}
+let hist = [], hi = -1, spaceDown = false;
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ state, ui })); } catch (e) {} }
+function commit() {
+  hist = hist.slice(0, hi + 1); hist.push(JSON.stringify(state.boards));
+  if (hist.length > 300) hist.shift();
+  hi = hist.length - 1; save();
+}
+function restore(i) {
+  if (i < 0 || i >= hist.length) return;
+  hi = i; state.boards = JSON.parse(hist[hi]);
+  for (const b of Object.values(boards)) { b.sel.clear(); b.render(); }
+  save();
+}
+
+/* =====================================================================
+   Board
+   ===================================================================== */
+class Board {
+  constructor(deck, root) {
+    this.deck = deck; this.root = root;
+    this.view = { x: 0, y: 0, z: 1 }; this.sel = new Set(); this.nodes = new Map();
+    this.editing = null; this.temp = null;
+    root.innerHTML = `<div class="world"><div class="items"></div><svg class="arrows"></svg></div><div class="marq" hidden></div><div class="blabel">${DECKS[deck].label}</div>`;
+    this.world = $('.world', root); this.itemsEl = $('.items', root); this.svg = $('svg', root); this.marq = $('.marq', root);
+    root.addEventListener('pointerdown', e => this.onDown(e));
+    root.addEventListener('dblclick', e => { const el = e.target.closest('[data-id]'); if (el && !this.editing) this.startEdit(el.dataset.id); });
+    root.addEventListener('contextmenu', e => e.preventDefault());
+    root.addEventListener('wheel', e => {
+      e.preventDefault();
+      const r = root.getBoundingClientRect();
+      if (e.ctrlKey || e.metaKey) this.zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.01));
+      else { this.view.x -= e.deltaX; this.view.y -= e.deltaY; this.applyView(); }
+    }, { passive: false });
+  }
+  get data() { return state.boards[this.deck]; }
+  item(id) { return this.data.items.find(i => i.id === id); }
+  toWorld(e) { const r = this.root.getBoundingClientRect(); return { x: (e.clientX - r.left - this.view.x) / this.view.z, y: (e.clientY - r.top - this.view.y) / this.view.z }; }
+  applyView() {
+    const v = this.view; this.world.style.transform = `translate(${v.x}px,${v.y}px) scale(${v.z})`;
+    if (ui.active === this.deck) $('#zoomv').textContent = Math.round(v.z * 100) + '%';
+  }
+  zoomAt(cx, cy, f) {
+    const v = this.view, z2 = Math.min(3, Math.max(0.15, v.z * f));
+    v.x = cx - (cx - v.x) * z2 / v.z; v.y = cy - (cy - v.y) * z2 / v.z; v.z = z2; this.applyView();
+  }
+  zoomBy(f) { const r = this.root.getBoundingClientRect(); this.zoomAt(r.width / 2, r.height / 2, f); }
+  rectOf(it) {
+    if (it.t === 'card') return { x: it.x, y: it.y, w: CW, h: CH };
+    if (it.t === 'frame') return { x: it.x, y: it.y, w: it.w, h: it.h };
+    const el = this.nodes.get(it.id);
+    return { x: it.x, y: it.y, w: (el && el.offsetWidth) || 120, h: (el && el.offsetHeight) || 40 };
+  }
+  bbox() {
+    const d = this.data; if (!d.items.length && !d.arrows.length) return null;
+    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    const add = (x, y) => { x1 = Math.min(x1, x); y1 = Math.min(y1, y); x2 = Math.max(x2, x); y2 = Math.max(y2, y); };
+    for (const it of d.items) { const r = this.rectOf(it); add(r.x - 14, r.y - (it.t === 'frame' ? 30 : 14)); add(r.x + r.w + 14, r.y + r.h + 14); }
+    for (const a of d.arrows) for (const p of [a.a, a.b]) if (!p.id) add(p.x, p.y);
+    return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+  }
+  fit() {
+    const r = this.root.getBoundingClientRect(); if (r.width < 20) return;
+    const b = this.bbox();
+    if (!b) { this.view = { x: 0, y: 0, z: 1 }; return this.applyView(); }
+    const z = Math.min(1.15, (r.width - 60) / b.w, (r.height - 90) / b.h);
+    this.view = { z, x: (r.width - b.w * z) / 2 - b.x * z, y: (r.height - b.h * z) / 2 + 14 - b.y * z };
+    this.applyView();
+  }
+
+  /* ----- render ----- */
+  render() {
+    const d = this.data, seen = new Set();
+    d.items.forEach((it, i) => {
+      let el = this.nodes.get(it.id);
+      if (!el) { el = document.createElement('div'); el.dataset.id = it.id; this.itemsEl.appendChild(el); this.nodes.set(it.id, el); }
+      seen.add(it.id);
+      const cls = [it.t, it.t === 'card' ? this.deck : '', it.t === 'card' && (it.k == null || it.ed) ? 'custom' : '', it.hl ? 'hl' : '', this.sel.has(it.id) ? 'sel' : ''].filter(Boolean).join(' ');
+      if (el.className !== cls) el.className = cls;
+      el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; el.style.zIndex = it.t === 'frame' ? 0 : i + 1;
+      if (it.t === 'frame') { el.style.width = it.w + 'px'; el.style.height = it.h + 'px'; }
+      if (this.editing !== it.id) {
+        const sig = it.t === 'card' ? it.lines.join('|') : it.t === 'frame' ? 'f' + it.title : 'n' + it.text;
+        if (el._sig !== sig) {
+          el._sig = sig;
+          el.innerHTML = it.t === 'card' ? cardInner(it.lines)
+            : it.t === 'frame' ? `<div class="txt" data-id="${it.id}">${esc(it.title)}</div><div class="rz" data-id="${it.id}"></div>`
+            : `<div class="txt">${esc(it.text)}</div>`;
+        }
+      }
+    });
+    for (const [id, el] of this.nodes) if (!seen.has(id)) { el.remove(); this.nodes.delete(id); }
+    this.renderArrows(); this.applyView(); updateGrid(this.deck);
+  }
+  endRect(p) {
+    if (!p.id) return { x: p.x, y: p.y, w: 0, h: 0 };
+    const it = this.item(p.id); return it ? this.rectOf(it) : null;
+  }
+  arrowGeom(a) {
+    const A = this.endRect(a.a), B = this.endRect(a.b); if (!A || !B) return null;
+    const c1 = { x: A.x + A.w / 2, y: A.y + A.h / 2 }, c2 = { x: B.x + B.w / 2, y: B.y + B.h / 2 };
+    const clip = (R, c, to, pad) => {
+      if (!R.w) return c;
+      const dx = to.x - c.x, dy = to.y - c.y; if (!dx && !dy) return c;
+      const t = Math.min(dx ? (R.w / 2 + pad) / Math.abs(dx) : Infinity, dy ? (R.h / 2 + pad) / Math.abs(dy) : Infinity, 1);
+      return { x: c.x + dx * t, y: c.y + dy * t };
+    };
+    let p1 = clip(A, c1, c2, 4), p2 = clip(B, c2, c1, 5);
+    const dx = p2.x - p1.x, dy = p2.y - p1.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    if (a.a.id && a.b.id && this.data.arrows.some(o => o.a.id === a.b.id && o.b.id === a.a.id)) {
+      p1 = { x: p1.x - uy * 13, y: p1.y + ux * 13 }; p2 = { x: p2.x - uy * 13, y: p2.y + ux * 13 };
+    }
+    const hl = Math.min(20, L * 0.8), bx = p2.x - ux * hl, by = p2.y - uy * hl;
+    return { p1, p2, base: { x: bx, y: by }, head: [[p2.x, p2.y], [bx - uy * 10, by + ux * 10], [bx + uy * 10, by - ux * 10]] };
+  }
+  renderArrows() {
+    let h = '';
+    for (const a of this.data.arrows) {
+      const g = this.arrowGeom(a); if (!g) continue;
+      const d = `M${g.p1.x} ${g.p1.y}L${g.base.x} ${g.base.y}`;
+      h += `<g class="${this.sel.has(a.id) ? 's' : ''}"><path class="ln" d="${d}"/><polygon class="hd" points="${g.head.map(p => p.join(',')).join(' ')}"/><path class="hit" data-aid="${a.id}" d="M${g.p1.x} ${g.p1.y}L${g.p2.x} ${g.p2.y}"/></g>`;
+    }
+    if (this.temp) h += `<path class="tmp" d="M${this.temp.x1} ${this.temp.y1}L${this.temp.x2} ${this.temp.y2}"/>`;
+    this.svg.innerHTML = h;
+  }
+
+  /* ----- pointer ----- */
+  onDown(e) {
+    setActive(this.deck);
+    if (this.editing) { if (e.target.closest('[contenteditable]')) return; document.activeElement && document.activeElement.blur(); }
+    if (e.button === 1 || e.button === 2 || (e.button === 0 && spaceDown)) return this.startPan(e);
+    if (e.button !== 0) return;
+    const itEl = e.target.closest('[data-id]'), arEl = e.target.closest('[data-aid]');
+    const it = itEl && this.item(itEl.dataset.id);
+    if (ui.tool === 'arrow') return this.startArrow(e, it);
+    if (it && e.target.classList.contains('rz')) return this.startResize(e, it);
+    const id = it ? it.id : arEl ? arEl.dataset.aid : null;
+    if (!id) return this.startMarquee(e);
+    const was = this.sel.has(id);
+    if (e.shiftKey) { was ? this.sel.delete(id) : this.sel.add(id); return this.render(); }
+    if (!was) this.sel = new Set([id]);
+    if (it && it.t !== 'frame') { const a = this.data.items; a.push(a.splice(a.indexOf(it), 1)[0]); }
+    this.render();
+    this.startMove(e, id, was);
+  }
+  startPan(e) {
+    e.preventDefault(); document.body.classList.add('panning');
+    const v = this.view, sx = e.clientX - v.x, sy = e.clientY - v.y;
+    track(m => { v.x = m.clientX - sx; v.y = m.clientY - sy; this.applyView(); }, () => document.body.classList.remove('panning'));
+  }
+  startMove(e, id, was) {
+    const d = this.data, moving = new Map();
+    for (const it of d.items) if (this.sel.has(it.id)) moving.set(it, { x: it.x, y: it.y });
+    for (const [f] of [...moving]) if (f.t === 'frame') for (const it of d.items) {
+      if (it.t === 'frame' || moving.has(it)) continue;
+      const r = this.rectOf(it), cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+      if (cx > f.x && cx < f.x + f.w && cy > f.y && cy < f.y + f.h) moving.set(it, { x: it.x, y: it.y });
+    }
+    for (const a of d.arrows) if (this.sel.has(a.id)) for (const p of [a.a, a.b]) if (!p.id) moving.set(p, { x: p.x, y: p.y });
+    let moved = false; const sx = e.clientX, sy = e.clientY;
+    track(m => {
+      const dx = (m.clientX - sx) / this.view.z, dy = (m.clientY - sy) / this.view.z;
+      if (!moved && Math.hypot(m.clientX - sx, m.clientY - sy) < 4) return;
+      moved = true;
+      for (const [o, s] of moving) { o.x = Math.round(s.x + dx); o.y = Math.round(s.y + dy); }
+      this.render();
+    }, () => {
+      if (moved) commit();
+      else if (was && this.sel.size > 1) { this.sel = new Set([id]); this.render(); }
+    });
+  }
+  startResize(e, it) {
+    const sw = it.w, sh = it.h, sx = e.clientX, sy = e.clientY;
+    this.sel = new Set([it.id]);
+    track(m => {
+      it.w = Math.max(160, Math.round(sw + (m.clientX - sx) / this.view.z));
+      it.h = Math.max(110, Math.round(sh + (m.clientY - sy) / this.view.z));
+      this.render();
+    }, () => commit());
+  }
+  startMarquee(e) {
+    const r = this.root.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top, w0 = this.toWorld(e);
+    let moved = false;
+    track(m => {
+      const x = m.clientX - r.left, y = m.clientY - r.top;
+      if (!moved && Math.hypot(x - sx, y - sy) < 4) return;
+      moved = true; this.marq.hidden = false;
+      Object.assign(this.marq.style, { left: Math.min(x, sx) + 'px', top: Math.min(y, sy) + 'px', width: Math.abs(x - sx) + 'px', height: Math.abs(y - sy) + 'px' });
+    }, u => {
+      this.marq.hidden = true;
+      if (!e.shiftKey) this.sel.clear();
+      if (moved) {
+        const w1 = this.toWorld(u), x1 = Math.min(w0.x, w1.x), x2 = Math.max(w0.x, w1.x), y1 = Math.min(w0.y, w1.y), y2 = Math.max(w0.y, w1.y);
+        for (const it of this.data.items) {
+          const q = this.rectOf(it);
+          const hit = it.t === 'frame' ? (q.x >= x1 && q.y >= y1 && q.x + q.w <= x2 && q.y + q.h <= y2) : (q.x < x2 && q.x + q.w > x1 && q.y < y2 && q.y + q.h > y1);
+          if (hit) this.sel.add(it.id);
+        }
+        for (const a of this.data.arrows) { const g = this.arrowGeom(a); if (g && [g.p1, g.p2].every(p => p.x > x1 && p.x < x2 && p.y > y1 && p.y < y2)) this.sel.add(a.id); }
+      }
+      this.render();
+    });
+  }
+  startArrow(e, it) {
+    const w = this.toWorld(e), from = it && it.t !== 'frame' ? { id: it.id } : { x: Math.round(w.x), y: Math.round(w.y) };
+    const c = it && it.t !== 'frame' ? (r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 }))(this.rectOf(it)) : w;
+    track(m => { const p = this.toWorld(m); this.temp = { x1: c.x, y1: c.y, x2: p.x, y2: p.y }; this.renderArrows(); }, u => {
+      this.temp = null;
+      const p = this.toWorld(u), el = document.elementFromPoint(u.clientX, u.clientY);
+      const tEl = el && this.root.contains(el) && el.closest('[data-id]'), t = tEl && this.item(tEl.dataset.id);
+      const to = t && t.t !== 'frame' ? { id: t.id } : { x: Math.round(p.x), y: Math.round(p.y) };
+      const same = from.id && from.id === to.id, short = Math.hypot(p.x - w.x, p.y - w.y) < 14;
+      const dup = from.id && to.id && this.data.arrows.some(a => a.a.id === from.id && a.b.id === to.id);
+      if (!same && !short && !dup) { const a = { id: uid(), a: from, b: to }; this.data.arrows.push(a); this.sel = new Set([a.id]); commit(); }
+      this.render();
+    });
+  }
+
+  /* ----- editing ----- */
+  startEdit(id) {
+    const it = this.item(id), el = this.nodes.get(id); if (!it || !el) return;
+    this.editing = id; this.sel = new Set([id]); this.render();
+    if (it.t === 'card') el.innerHTML = '<div class="txt edit"></div>';
+    const t = $('.txt', el);
+    t.textContent = it.t === 'card' ? it.lines.join('\n') : it.t === 'frame' ? it.title : it.text;
+    try { t.contentEditable = 'plaintext-only'; } catch (err) { t.contentEditable = 'true'; }
+    t.focus();
+    const rg = document.createRange(); rg.selectNodeContents(t); const s = getSelection(); s.removeAllRanges(); s.addRange(rg);
+    t.onkeydown = e => {
+      e.stopPropagation();
+      if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey || it.t === 'frame'))) { e.preventDefault(); t.blur(); }
+    };
+    t.onblur = () => {
+      const v = t.innerText.replace(/ /g, ' ').replace(/\r/g, '');
+      const lines = v.split('\n').map(x => x.trim()).filter(Boolean);
+      this.editing = null; el._sig = null; t.onblur = null;
+      if (it.t === 'card') {
+        if (!lines.length) { if (it.k == null) this.remove([id]); }
+        else { it.lines = lines; if (it.k != null) { it.ed = lines.join('|') !== deckLines(this.deck, it.k).join('|'); } }
+      } else if (it.t === 'frame') it.title = lines.join(' ') || 'グループ';
+      else { if (!lines.length) this.remove([id]); else it.text = v.trim(); }
+      commit(); this.render();
+    };
+  }
+
+  /* ----- operations ----- */
+  remove(ids) {
+    const d = this.data, S = new Set(ids);
+    d.items = d.items.filter(i => !S.has(i.id));
+    d.arrows = d.arrows.filter(a => !S.has(a.id) && !S.has(a.a.id) && !S.has(a.b.id));
+    for (const id of ids) this.sel.delete(id);
+  }
+  deleteSel() { if (!this.sel.size) return; this.remove([...this.sel]); commit(); this.render(); }
+  toggleHl() {
+    const its = this.data.items.filter(i => this.sel.has(i.id)); if (!its.length) return;
+    const on = !its.every(i => i.hl); its.forEach(i => { i.hl = on; }); commit(); this.render();
+  }
+  center() {
+    const r = this.root.getBoundingClientRect(), v = this.view;
+    return r.width < 20 ? { x: 300, y: 200 } : { x: (r.width / 2 - v.x) / v.z, y: (r.height / 2 - v.y) / v.z };
+  }
+  freeSpot() {
+    const r = this.root.getBoundingClientRect(), z = this.view.z; let x0 = 40, y0 = 60, cols = 5;
+    if (r.width >= 60) { x0 = Math.round(-this.view.x / z + 30); y0 = Math.round(-this.view.y / z + 56 / z); cols = Math.max(2, Math.floor((r.width / z - 30) / (CW + 40))); }
+    const cards = this.data.items.filter(i => i.t === 'card');
+    for (let n = 0; ; n++) {
+      const x = x0 + (n % cols) * (CW + 40), y = y0 + Math.floor(n / cols) * (CH + 40);
+      if (!cards.some(c => Math.abs(c.x - x) < CW && Math.abs(c.y - y) < CH)) return { x, y };
+    }
+  }
+  toggleDeckCard(k) {
+    const ex = this.data.items.find(i => i.k === k);
+    if (ex) this.remove([ex.id]);
+    else { const p = this.freeSpot(), it = { id: uid(), t: 'card', k, lines: deckLines(this.deck, k), x: p.x, y: p.y }; this.data.items.push(it); this.sel = new Set([it.id]); }
+    commit(); this.render();
+  }
+  addCustom() {
+    const c = this.center(), n = this.data.items.filter(i => i.k == null && i.t === 'card').length % 6;
+    const it = { id: uid(), t: 'card', k: null, lines: [], x: Math.round(c.x - CW / 2 + n * 24), y: Math.round(c.y - CH / 2 + n * 24) };
+    this.data.items.push(it); this.render(); this.startEdit(it.id);
+  }
+  addFrame() {
+    const sel = this.data.items.filter(i => this.sel.has(i.id) && i.t !== 'frame');
+    let f;
+    if (sel.length) {
+      let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+      for (const it of sel) { const r = this.rectOf(it); x1 = Math.min(x1, r.x); y1 = Math.min(y1, r.y); x2 = Math.max(x2, r.x + r.w); y2 = Math.max(y2, r.y + r.h); }
+      f = { x: x1 - 24, y: y1 - 40, w: x2 - x1 + 48, h: y2 - y1 + 64 };
+    } else { const c = this.center(); f = { x: Math.round(c.x - 240), y: Math.round(c.y - 160), w: 480, h: 320 }; }
+    const it = { id: uid(), t: 'frame', title: 'グループ', ...f };
+    this.data.items.unshift(it); commit(); this.render(); this.startEdit(it.id);
+  }
+  addNote() {
+    const c = this.center(), it = { id: uid(), t: 'note', text: 'メモ', x: Math.round(c.x - 40), y: Math.round(c.y - 20) };
+    this.data.items.push(it); commit(); this.render(); this.startEdit(it.id);
+  }
+  nudge(dx, dy) {
+    const its = this.data.items.filter(i => this.sel.has(i.id)); if (!its.length) return;
+    its.forEach(i => { i.x += dx; i.y += dy; }); commit(); this.render();
+  }
+
+  /* ----- PNG export ----- */
+  draw(ctx) {
+    const d = this.data, F = (px, w = 700) => `${w} ${px}px "M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif`;
+    const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const it of d.items) if (it.t === 'frame') {
+      ctx.setLineDash(it.hl ? [] : [12, 9]); ctx.lineWidth = it.hl ? 5 : 3; ctx.strokeStyle = it.hl ? '#f2a03d' : '#a9967c'; ctx.fillStyle = 'rgba(255,255,255,.28)';
+      rr(it.x, it.y, it.w, it.h, 18); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = F(20); const tw = ctx.measureText(it.title).width + 28;
+      ctx.fillStyle = '#8a765c'; rr(it.x + 14, it.y - 20, tw, 36, 9); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(it.title, it.x + 14 + tw / 2, it.y - 1);
+    }
+    for (const it of d.items) {
+      if (it.t === 'card') {
+        const cu = it.k == null || it.ed, pain = this.deck === 'pain';
+        const bg = pain ? (cu ? '#3a9fa6' : '#12838b') : (cu ? '#fdf1d6' : '#fcfbf8'), fg = pain ? '#fff' : '#12838b';
+        ctx.save();
+        if (it.hl) { ctx.translate(it.x + CW / 2, it.y + CH / 2); ctx.scale(1.1, 1.1); ctx.translate(-it.x - CW / 2, -it.y - CH / 2); ctx.shadowColor = 'rgba(242,160,61,.9)'; ctx.shadowBlur = 30; ctx.fillStyle = '#f2a03d'; rr(it.x - 6, it.y - 6, CW + 12, CH + 12, 18); ctx.fill(); }
+        else { ctx.shadowColor = 'rgba(70,45,20,.25)'; ctx.shadowBlur = 7; ctx.shadowOffsetY = 2; }
+        ctx.fillStyle = bg; rr(it.x, it.y, CW, CH, 13); ctx.fill(); ctx.restore(); ctx.save();
+        if (it.hl) { ctx.translate(it.x + CW / 2, it.y + CH / 2); ctx.scale(1.1, 1.1); ctx.translate(-it.x - CW / 2, -it.y - CH / 2); }
+        if (cu) { ctx.globalAlpha = .6; ctx.setLineDash([7, 5]); ctx.lineWidth = 2; ctx.strokeStyle = fg; rr(it.x + 8, it.y + 8, CW - 16, CH - 16, 8); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+        const sz = lineSizes(it.lines), tot = sz.reduce((a, b) => a + b * 1.28, 0); let y = it.y + CH / 2 - tot / 2;
+        ctx.fillStyle = fg;
+        it.lines.forEach((l, i) => { ctx.font = F(sz[i]); ctx.fillText(l, it.x + CW / 2, y + sz[i] * 0.64 + sz[i] * 0.04); y += sz[i] * 1.28; });
+        ctx.restore();
+      } else if (it.t === 'note') {
+        const r = this.rectOf(it), ls = it.text.split('\n');
+        ctx.fillStyle = it.hl ? '#ffe3b5' : 'rgba(255,255,255,.8)'; rr(r.x, r.y, r.w, r.h, 8); ctx.fill();
+        if (it.hl) { ctx.lineWidth = 3; ctx.strokeStyle = '#f2a03d'; ctx.stroke(); }
+        ctx.fillStyle = '#2c3a3b'; ctx.font = `700 21px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = 'left';
+        ls.forEach((l, i) => ctx.fillText(l, r.x + 12, r.y + 5 + 21 * 1.4 * (i + .5)));
+        ctx.textAlign = 'center';
+      }
+    }
+    ctx.strokeStyle = ctx.fillStyle = '#3d4b4c'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    for (const a of d.arrows) {
+      const g = this.arrowGeom(a); if (!g) continue;
+      ctx.beginPath(); ctx.moveTo(g.p1.x, g.p1.y); ctx.lineTo(g.base.x, g.base.y); ctx.stroke();
+      ctx.beginPath(); g.head.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill();
+    }
+  }
+}
+
+/* =====================================================================
+   grid / UI wiring
+   ===================================================================== */
+const boards = {};
+for (const dk of $$('.deck')) {
+  const deck = dk.dataset.deck, grid = $('.grid', dk);
+  let h = '<div></div>' + [1,2,3,4,5,6,7,8].map(n => `<div class="gl">${n}</div>`).join('');
+  DECKS[deck].rows.forEach((row, r) => {
+    h += `<div class="gl">${ROWS[r]}</div>`;
+    row.forEach((c, i) => {
+      h += c ? `<div class="card ${deck}" data-k="${r * 8 + i}" title="${ROWS[r]}${i + 1}">${cardInner(c.split('|'))}</div>` : `<div class="slot-add">＋ 予備カード</div>`;
+    });
+  });
+  grid.innerHTML = h;
+  boards[deck] = new Board(deck, $('.board', dk));
+  grid.addEventListener('click', e => {
+    setActive(deck);
+    const c = e.target.closest('[data-k]');
+    if (c) boards[deck].toggleDeckCard(+c.dataset.k);
+    else if (e.target.closest('.slot-add')) { if (ui.layout === 'grid' && ui.view !== 'both') setLayout('split'); boards[deck].addCustom(); }
+  });
+  const wrap = $('.gridwrap', dk);
+  new ResizeObserver(() => {
+    const w = wrap.clientWidth - 28, hh = wrap.clientHeight - 28;
+    if (w > 0 && hh > 0) grid.style.setProperty('--u', Math.min(w / 1782, hh / 1054) + 'px');
+  }).observe(wrap);
+}
+function updateGrid(deck) {
+  const taken = new Set(state.boards[deck].items.filter(i => i.k != null).map(i => i.k));
+  for (const c of $$(`.deck[data-deck=${deck}] .grid [data-k]`)) c.classList.toggle('taken', taken.has(+c.dataset.k));
+}
+const cur = () => boards[ui.active];
+function setActive(deck) {
+  if (ui.active !== deck) { const o = boards[ui.active]; ui.active = deck; if (o.sel.size) { o.sel.clear(); o.render(); } }
+  for (const d of $$('.deck')) d.classList.toggle('active', d.dataset.deck === deck);
+  cur().applyView();
+}
+function syncUI() {
+  $('#stage').className = `view-${ui.view} lay-${ui.layout}`;
+  for (const b of $$('#views button')) b.classList.toggle('on', b.dataset.view === ui.view);
+  for (const b of $$('#layouts button')) b.classList.toggle('on', b.dataset.lay === ui.layout);
+  $('#layouts').style.visibility = ui.view === 'both' ? 'hidden' : '';
+  for (const b of $$('[data-tool]')) b.classList.toggle('on', b.dataset.tool === ui.tool);
+  document.body.classList.toggle('tool-arrow', ui.tool === 'arrow');
+  save();
+}
+function fitAll() { requestAnimationFrame(() => { for (const b of Object.values(boards)) b.fit(); }); }
+function setView(v) { ui.view = v; if (v !== 'both') setActive(v); syncUI(); fitAll(); }
+function setLayout(l) { ui.layout = l; syncUI(); fitAll(); }
+function setTool(t) { ui.tool = t; syncUI(); }
+
+$('#views').onclick = e => { const b = e.target.closest('button'); if (b) setView(b.dataset.view); };
+$('#layouts').onclick = e => { const b = e.target.closest('button'); if (b) setLayout(b.dataset.lay); };
+for (const b of $$('[data-tool]')) b.onclick = () => setTool(b.dataset.tool);
+const needBoard = () => { if (ui.layout === 'grid' && ui.view !== 'both') setLayout('split'); };
+$('#bCard').onclick = () => { needBoard(); cur().addCustom(); };
+$('#bFrame').onclick = () => { needBoard(); cur().addFrame(); };
+$('#bNote').onclick = () => { needBoard(); cur().addNote(); };
+$('#bHl').onclick = () => cur().toggleHl();
+$('#bDel').onclick = () => cur().deleteSel();
+$('#bUndo').onclick = () => restore(hi - 1);
+$('#bRedo').onclick = () => restore(hi + 1);
+$('#bZi').onclick = () => cur().zoomBy(1.2);
+$('#bZo').onclick = () => cur().zoomBy(1 / 1.2);
+$('#bFit').onclick = () => fitAll();
+$('#bHelp').onclick = () => { $('#help').hidden = !$('#help').hidden; };
+$('#name').value = state.name || '';
+$('#name').oninput = e => { state.name = e.target.value; save(); };
+$('#name').onkeydown = e => { if (e.key === 'Enter') e.target.blur(); };
+
+function loadState(s) {
+  state = s; $('#name').value = state.name || '';
+  for (const b of Object.values(boards)) { b.sel.clear(); b.render(); }
+  hist = []; hi = -1; commit(); fitAll();
+}
+const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`; };
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+const fileBase = () => `痛みと願い_${(state.name || 'セッション').replace(/[\\/:*?"<>|\s]+/g, '_')}_${stamp()}`;
+$('#bNew').onclick = () => { if (confirm('現在のボードをすべて消して、新しいセッションを始めますか？\n（残したい場合は先に「ファイル保存」をしてください）')) { loadState(blank()); setView('pain'); setLayout('split'); } };
+$('#bSave').onclick = () => download(new Blob([JSON.stringify(state)], { type: 'application/json' }), fileBase() + '.json');
+$('#bLoad').onclick = () => $('#file').click();
+$('#file').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const s = JSON.parse(await f.text()); if (!s.boards || !s.boards.pain || !s.boards.wish) throw 0; loadState(s); }
+  catch (err) { alert('このファイルは読み込めませんでした。'); }
+};
+$('#bPng').onclick = async () => {
+  try { await document.fonts.ready; } catch (e) {}
+  const list = ui.view === 'both' ? ['pain', 'wish'] : [ui.view], pad = 50, head = 76, S = 2;
+  const parts = list.map(k => { const b = boards[k].bbox() || { x: 0, y: 0, w: 500, h: 300 }; return { k, b: { ...b, w: Math.max(b.w, 420) } }; });
+  const W = parts.reduce((a, p) => a + p.b.w + pad * 2, 0), H = Math.max(...parts.map(p => p.b.h)) + pad * 2 + head;
+  const cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S;
+  const ctx = cv.getContext('2d'); ctx.scale(S, S); ctx.fillStyle = '#f6efe6'; ctx.fillRect(0, 0, W, H);
+  let ox = 0;
+  parts.forEach((p, i) => {
+    if (i) { ctx.fillStyle = '#d9cebd'; ctx.fillRect(ox - 1.5, 0, 3, H); }
+    ctx.fillStyle = '#0a4a4f'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 30px "Zen Kaku Gothic New",sans-serif';
+    ctx.fillText(DECKS[p.k].label, ox + pad, 44);
+    if (!i && state.name) { ctx.font = '500 20px "Zen Kaku Gothic New",sans-serif'; ctx.fillStyle = '#6a7879'; ctx.fillText(state.name, ox + pad + 90, 46); }
+    ctx.save(); ctx.translate(ox + pad - p.b.x, head + pad - p.b.y); boards[p.k].draw(ctx); ctx.restore();
+    ox += p.b.w + pad * 2;
+  });
+  cv.toBlob(b => download(b, fileBase() + '.png'), 'image/png');
+};
+
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,[contenteditable]')) return;
+  const b = cur(), mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  if (e.code === 'Space') { spaceDown = true; e.preventDefault(); return; }
+  if (mod && k === 'z') { e.preventDefault(); return restore(e.shiftKey ? hi + 1 : hi - 1); }
+  if (mod && k === 'y') { e.preventDefault(); return restore(hi + 1); }
+  if (mod && k === 'a') { e.preventDefault(); b.sel = new Set([...b.data.items.map(i => i.id), ...b.data.arrows.map(a => a.id)]); return b.render(); }
+  if (mod || e.altKey) return;
+  if (k === 'delete' || k === 'backspace') { e.preventDefault(); return b.deleteSel(); }
+  if (k === 'escape') { setTool('select'); b.sel.clear(); $('#help').hidden = true; return b.render(); }
+  if (k.startsWith('arrow')) { e.preventDefault(); const s = e.shiftKey ? 1 : 10; return b.nudge(k === 'arrowleft' ? -s : k === 'arrowright' ? s : 0, k === 'arrowup' ? -s : k === 'arrowdown' ? s : 0); }
+  const map = { v: () => setTool('select'), a: () => setTool(ui.tool === 'arrow' ? 'select' : 'arrow'), n: () => $('#bCard').click(), g: () => $('#bFrame').click(), t: () => $('#bNote').click(), h: () => b.toggleHl(), f: () => fitAll() };
+  if (map[k]) { e.preventDefault(); map[k](); }
+});
+addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; });
+addEventListener('blur', () => { spaceDown = false; });
+
+/* ---------- init ---------- */
+for (const b of Object.values(boards)) b.render();
+commit(); syncUI(); setActive(ui.view === 'both' ? ui.active : ui.view); fitAll();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { for (const b of Object.values(boards)) b.renderArrows(); });
+</script>
+</body>
+</html>
