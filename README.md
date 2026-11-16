@@ -8,7 +8,9 @@
 ## 構成
 
 ```
-index.html        … LP本体（HTML / CSS / JS を1ファイルに集約）
+index.html        … 「痛みと願いカード」LP本体（HTML / CSS / JS を1ファイルに集約）
+negai-logo.html   … 「痛みと願いのロゴ化セッション」LP（チームかもえさ）
+docs/negai-logo-brief.md … ロゴ化セッションLPの前提情報と未確定事項
 images/hero.jpg   … メインビジュアル
 images/hero.webp  … メインビジュアル（WebP版）
 images/ogp.jpg    … SNSシェア用画像（1200px幅）
@@ -23,6 +25,6 @@ images/profile.jpg … ナビゲーターのプロフィール写真（webp版�
 
 1. リポジトリの **Settings → Pages** を開く
 2. **Source** を「Deploy from a branch」にし、公開したいブランチと `/ (root)` を選んで保存
-3. 数分後に `https://<ユーザー名>.github.io/landing_page/` で公開されます
+3. 数分後に `https://<ユーザー名>.github.io/landing_page/` で公開されます（ロゴ化セッションは `…/landing_page/negai-logo.html`）
 
 ※ `index.html` の `og:image` は `https://tgunship.github.io/landing_page/images/ogp.jpg` を前提にしています。独自ドメインなどで公開する場合は書き換えてください。

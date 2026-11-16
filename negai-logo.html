@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>痛みと願いのロゴ化セッション｜あなたの内側にあるものを、言葉と絵にして受け取る時間</title>
+  <meta name="description" content="カードを使った対話で自分の中の痛みと願いを見つめ、そこから浮かび上がったものを言葉と絵にして受け取るセッション。スタンダードコース（2時間30分）とショートコース（1時間）をご用意しています。">
+  <meta name="theme-color" content="#12838b">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="痛みと願いのロゴ化セッション">
+  <meta property="og:description" content="あなたの内側にあるものを、言葉と絵にして受け取る時間。">
+  <meta property="og:image" content="https://tgunship.github.io/landing_page/images/ogp.jpg">
+  <meta property="og:locale" content="ja_JP">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --main: #12838b;
+      --main-dark: #0c5f65;
+      --main-deep: #0a4a4f;
+      --main-light: #e3f1f1;
+      --main-pale: #f1f8f8;
+      --wood: #f6efe6;
+      --ink: #2c3a3b;
+      --ink-soft: #5b6b6c;
+      --white: #ffffff;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(10, 74, 79, .10);
+      --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+      --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+    body {
+      margin: 0; font-family: var(--sans); color: var(--ink); background: var(--wood);
+      line-height: 1.9; letter-spacing: .04em; -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; height: auto; display: block; }
+    a { color: var(--main); }
+    p { margin: 0 0 1em; }
+
+    .container { width: min(1080px, 100% - 32px); margin-inline: auto; }
+    .narrow { width: min(760px, 100% - 32px); margin-inline: auto; }
+    .container .narrow { width: min(760px, 100%); }
+
+    /* ---------- Header ---------- */
+    .header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(246, 239, 230, .9);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(18, 131, 139, .12);
+    }
+    .header__inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo {
+      font-family: var(--serif); font-weight: 600; font-size: 1.05rem;
+      color: var(--main-deep); text-decoration: none; display: flex; align-items: center; gap: .6em;
+    }
+    .logo__mark { position: relative; width: 30px; height: 22px; flex-shrink: 0; }
+    .logo__mark::before, .logo__mark::after { content: ""; position: absolute; width: 20px; height: 14px; border-radius: 3px; }
+    .logo__mark::before { left: 0; top: 0; background: var(--main); transform: rotate(-8deg); }
+    .logo__mark::after { right: 0; bottom: 0; background: var(--white); border: 1.5px solid var(--main); transform: rotate(6deg); }
+    .nav { display: flex; gap: 1.5rem; align-items: center; }
+    .nav a { color: var(--ink); text-decoration: none; font-size: .88rem; }
+    .nav a:hover { color: var(--main); }
+    .nav .btn { padding: .55em 1.3em; font-size: .85rem; }
+    @media (max-width: 900px) { .nav a:not(.btn) { display: none; } }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .6em;
+      background: var(--main); color: var(--white) !important; text-decoration: none; font-weight: 700;
+      padding: 1em 2.2em; border-radius: 999px; box-shadow: 0 6px 18px rgba(18, 131, 139, .28);
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn:hover { background: var(--main-dark); transform: translateY(-2px); box-shadow: 0 10px 24px rgba(18, 131, 139, .32); }
+    .btn--outline { background: transparent; color: var(--main) !important; border: 1.5px solid var(--main); box-shadow: none; }
+    .btn--outline:hover { background: var(--main); color: var(--white) !important; }
+    .btn svg { width: 1.2em; height: 1.2em; flex-shrink: 0; }
+
+    /* ---------- Section common ---------- */
+    section { padding: 96px 0; }
+    @media (max-width: 640px) { section { padding: 72px 0; } }
+    .bg-white { background: var(--white); }
+    .bg-pale { background: var(--main-pale); }
+    .section-head { text-align: center; margin-bottom: 48px; }
+    .eyebrow { display: inline-block; font-size: .78rem; font-weight: 700; letter-spacing: .3em; color: var(--main); margin-bottom: .8em; }
+    .eyebrow::before, .eyebrow::after { content: ""; display: inline-block; width: 24px; height: 1px; background: currentColor; vertical-align: middle; margin: 0 .8em; }
+    .section-title { font-family: var(--serif); font-weight: 600; font-size: clamp(1.45rem, 3.6vw, 2.1rem); line-height: 1.6; margin: 0; color: var(--main-deep); }
+    .lead { color: var(--ink-soft); margin-top: 1.2em; }
+    .sub-title { text-align: center; font-family: var(--serif); font-weight: 600; font-size: 1.2rem; color: var(--main-deep); margin: 0 0 24px; }
+    .center { text-align: center; }
+    .marker { background: linear-gradient(transparent 62%, rgba(18, 131, 139, .18) 62%); font-weight: 700; }
+
+    /* ---------- Card chips ---------- */
+    .chip {
+      display: inline-grid; place-items: center; text-align: center;
+      min-width: 112px; min-height: 72px; padding: 8px 14px; border-radius: 8px;
+      font-weight: 700; font-size: .92rem; line-height: 1.4; box-shadow: 0 4px 10px rgba(0,0,0,.08);
+    }
+    .chip--pain { background: var(--main); color: var(--white); }
+    .chip--wish { background: #f7f7f4; color: var(--main); border: 1px solid #e3e3dc; }
+
+    /* ---------- Hero ---------- */
+    .hero { padding: 72px 0 0; text-align: center; overflow: hidden; }
+    .hero__sub { font-family: var(--serif); color: var(--main); font-size: clamp(.95rem, 2.4vw, 1.1rem); letter-spacing: .2em; margin-bottom: 1.4em; }
+    .hero__title { font-family: var(--serif); font-weight: 600; font-size: clamp(2.2rem, 7vw, 3.8rem); line-height: 1.4; margin: 0 0 .5em; color: var(--main-deep); letter-spacing: .12em; }
+    .hero__catch { font-family: var(--serif); font-size: clamp(1.15rem, 3.4vw, 1.6rem); line-height: 1.9; margin: 0 0 1.4em; }
+    .hero__catch em { font-style: normal; color: var(--main); background: linear-gradient(transparent 65%, rgba(18, 131, 139, .16) 65%); }
+    .hero__text { color: var(--ink-soft); margin-bottom: 2.4em; }
+    .hero__actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .hero__visual { margin: 64px auto 0; width: min(1200px, 100% - 32px); border-radius: 24px 24px 0 0; overflow: hidden; box-shadow: var(--shadow); }
+    .hero__visual img { width: 100%; aspect-ratio: 2000 / 1116; object-fit: cover; }
+    @media (max-width: 640px) {
+      .hero { padding-top: 56px; }
+      .hero__text { font-size: .9rem; letter-spacing: .02em; }
+    }
+
+    /* ---------- Target ---------- */
+    .check-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+    .check-list li { position: relative; padding: 1em 1.4em 1em 3.6em; background: var(--main-pale); border-radius: var(--radius); border: 1px solid rgba(18, 131, 139, .1); }
+    .check-list li::before {
+      content: ""; position: absolute; left: 1.3em; top: 1.25em; width: 1.3em; height: 1.3em; border-radius: 50%;
+      background: var(--main) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 62% no-repeat;
+    }
+    .target {
+      background: linear-gradient(rgba(18, 131, 139, .84), rgba(10, 74, 79, .88)), url("images/bg-table.webp") center 70% / cover no-repeat;
+    }
+    .target .eyebrow { color: rgba(255,255,255,.85); }
+    .target .section-title { color: var(--white); }
+    .target__panel { background: rgba(255,255,255,.95); border-radius: 20px; padding: clamp(24px, 5vw, 44px); box-shadow: 0 20px 40px rgba(0,0,0,.15); }
+    .target .check-list li { background: transparent; border: 0; border-bottom: 1px dashed rgba(18, 131, 139, .25); border-radius: 0; }
+    .target .check-list li:last-child { border-bottom: 0; }
+    @media (max-width: 640px) {
+      .target__panel { padding: 20px 16px; }
+      .target .check-list li { padding: .9em .4em .9em 2.8em; }
+      .target .check-list li::before { left: .4em; top: 1.15em; }
+    }
+    .hl { padding: 0 .1em; }
+    .hl--pink { background: linear-gradient(transparent 52%, #f7d3e2 52%); }
+    .hl--yellow { background: linear-gradient(transparent 52%, #f4e3a1 52%); }
+    .hl--blue { background: linear-gradient(transparent 52%, #cfe5f2 52%); }
+    .hl--green { background: linear-gradient(transparent 52%, #d6eab4 52%); }
+    .hl--purple { background: linear-gradient(transparent 52%, #e4d7f1 52%); }
+    .target__msg { margin-top: 36px; text-align: center; font-family: var(--serif); font-size: clamp(1.05rem, 2.8vw, 1.25rem); color: var(--main-deep); line-height: 2; margin-bottom: 0; }
+    .target__msg strong { color: var(--main); border-bottom: 2px solid var(--main); }
+
+    /* ---------- Movie ---------- */
+    .movie { display: grid; grid-template-columns: 1fr 360px; gap: 48px; align-items: center; }
+    @media (max-width: 820px) { .movie { grid-template-columns: 1fr; gap: 28px; text-align: center; } }
+    .movie__frame { width: 100%; max-width: 360px; margin-inline: auto; }
+    .movie__frame .instagram-media { margin: 0 auto !important; min-width: 0 !important; width: 100% !important; border-radius: 16px !important; box-shadow: var(--shadow) !important; }
+    .movie__fallback {
+      display: grid; place-items: center; align-content: center; gap: 14px; aspect-ratio: 9 / 14; width: 100%;
+      border-radius: 16px; background: linear-gradient(rgba(10, 74, 79, .55), rgba(10, 74, 79, .72)), url("images/bg-cards.webp") center / cover no-repeat;
+      color: var(--white) !important; text-decoration: none; text-align: center; padding: 24px;
+    }
+    .movie__fallback span { text-shadow: 0 1px 8px rgba(0,0,0,.45); }
+    .movie__play { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,.18); display: grid; place-items: center; }
+    .movie__play svg { width: 30px; height: 30px; margin-left: 4px; }
+    .movie__text .lead { margin-bottom: 1.6em; }
+
+    /* ---------- Message ---------- */
+    .message__title { font-family: var(--serif); font-weight: 600; text-align: center; font-size: clamp(1.35rem, 4vw, 2.1rem); line-height: 1.8; margin: 0 0 .6em; color: var(--main-deep); }
+    .message__title .from { color: var(--ink-soft); font-weight: 500; font-size: .82em; }
+    .message__title .arrow { display: block; color: var(--main); font-size: .8em; line-height: 1.4; }
+    .message__title .to { color: var(--main); }
+    .message__lead { text-align: center; margin-bottom: 40px; }
+
+    .loop { padding: 36px clamp(20px, 4vw, 40px); background: var(--wood); border-radius: 20px; margin-bottom: 72px; }
+    .loop__steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; counter-reset: step; }
+    .loop__steps li { position: relative; background: var(--white); border-radius: var(--radius); padding: 20px 14px 16px; text-align: center; font-size: .9rem; line-height: 1.7; box-shadow: 0 4px 14px rgba(10, 74, 79, .06); }
+    .loop__steps li::before {
+      counter-increment: step; content: counter(step); display: grid; place-items: center; margin: 0 auto 10px;
+      width: 28px; height: 28px; border-radius: 50%; background: var(--main); color: var(--white); font-weight: 700; font-size: .85rem;
+    }
+    .loop__steps li:not(:last-child)::after {
+      content: ""; position: absolute; right: -21px; top: 50%; width: 14px; height: 14px; transform: translateY(-50%);
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312838b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+    .loop__steps strong { color: var(--main-deep); }
+    .loop__back { margin: 20px 0 0; text-align: center; font-size: .9rem; color: var(--main-deep); }
+    .loop__back svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: .4em; color: var(--main); }
+    @media (max-width: 820px) {
+      .loop__steps { grid-template-columns: 1fr; gap: 10px; }
+      .loop__steps li { text-align: left; padding: 14px 16px 14px 58px; }
+      .loop__steps li::before { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); margin: 0; }
+      .loop__steps li::after { display: none; }
+      .loop__steps br { display: none; }
+    }
+
+    .depth { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 16px; align-items: center; margin: 0 0 32px; }
+    .depth__item { text-align: center; }
+    .depth__label { display: block; font-size: .78rem; font-weight: 700; letter-spacing: .1em; color: var(--ink-soft); margin-bottom: 10px; }
+    .depth__arrow { color: var(--main); }
+    .depth__arrow svg { width: 26px; height: 26px; }
+    .depth__goal {
+      display: inline-grid; place-items: center; min-height: 72px; padding: 10px 20px; border-radius: 999px;
+      background: var(--main-deep); color: var(--white); font-family: var(--serif); font-weight: 600; line-height: 1.5;
+      box-shadow: 0 6px 18px rgba(10, 74, 79, .25);
+    }
+    @media (max-width: 720px) {
+      .depth { grid-template-columns: 1fr; gap: 8px; }
+      .depth__arrow svg { transform: rotate(90deg); margin: 0 auto; }
+    }
+    .key-message { text-align: center; font-family: var(--serif); font-size: clamp(1.05rem, 2.8vw, 1.25rem); line-height: 2; color: var(--main-deep); margin: 32px 0 0; }
+    .key-message strong { color: var(--main); }
+
+    /* ---------- About ---------- */
+    .about__intro { display: grid; grid-template-columns: 260px 1fr; gap: 44px; align-items: center; margin-bottom: 48px; }
+    .about__intro img { border-radius: 20px; box-shadow: var(--shadow); aspect-ratio: 720 / 760; object-fit: cover; }
+    @media (max-width: 760px) { .about__intro { grid-template-columns: 1fr; gap: 24px; } .about__intro img { max-width: 240px; margin-inline: auto; } }
+    .about__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .deck__step { margin: 24px 0 0; padding-top: 18px; border-top: 1px dashed rgba(18, 131, 139, .3); font-size: .93rem; line-height: 1.9; }
+    .deck__step b { color: var(--main); font-size: 1.05em; }
+    @media (max-width: 720px) { .about__cards { grid-template-columns: 1fr; } }
+    .deck { background: var(--white); border-radius: 20px; padding: 32px 24px; box-shadow: var(--shadow); text-align: center; }
+    .deck__label { font-size: .8rem; font-weight: 700; letter-spacing: .2em; color: var(--ink-soft); margin-bottom: .2em; }
+    .deck__name { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; margin: 0 0 .1em; color: var(--main-deep); }
+    .deck__name small { font-size: .85rem; font-weight: 400; margin-left: .3em; color: var(--ink-soft); }
+    .deck__desc { font-size: .92rem; color: var(--ink-soft); margin-bottom: 22px; }
+    .mini-cards { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .mini-cards .chip { width: 112px; padding: 4px; }
+    .mini-cards .chip:nth-child(1) { transform: rotate(-3deg); }
+    .mini-cards .chip:nth-child(3) { transform: rotate(3deg); }
+    @media (max-width: 640px) {
+      .deck { padding: 28px 16px; }
+      .mini-cards { gap: 6px; flex-wrap: nowrap; }
+      .mini-cards .chip { width: 92px; min-width: 0; min-height: 62px; font-size: .8rem; }
+    }
+
+    /* ---------- Experience ---------- */
+    .exp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    @media (max-width: 860px) { .exp { grid-template-columns: 1fr; } }
+    .exp__item { background: var(--white); border-radius: 20px; padding: 36px 28px 30px; border-top: 4px solid var(--main); box-shadow: var(--shadow); }
+    .exp__num { font-family: var(--serif); font-size: 2rem; line-height: 1; color: var(--main); opacity: .45; margin-bottom: .4em; }
+    .exp__item h3 { font-family: var(--serif); font-weight: 600; font-size: 1.12rem; line-height: 1.7; margin: 0 0 .8em; color: var(--main-deep); }
+    .exp__item p { color: var(--ink-soft); font-size: .92rem; margin: 0; }
+
+    .after { margin-top: 56px; background: var(--white); border-radius: 20px; padding: 36px clamp(24px, 5vw, 48px); box-shadow: var(--shadow); }
+    .after__list { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 14px; }
+    .after__list li { display: flex; gap: 16px; align-items: flex-start; font-family: var(--serif); font-size: 1.02rem; }
+    .after__icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--main-light); display: grid; place-items: center; color: var(--main); }
+    .after__icon svg { width: 20px; height: 20px; }
+    .after__next { margin: 0; padding-top: 20px; border-top: 1px dashed rgba(18, 131, 139, .4); font-size: .9rem; color: var(--ink-soft); text-align: center; }
+    .after__next a { font-weight: 700; }
+
+    /* ---------- Profile ---------- */
+    .profile__card {
+      display: grid; grid-template-columns: 240px 1fr; gap: 44px; align-items: center;
+      background: var(--main-pale); border-radius: 24px; padding: clamp(28px, 5vw, 52px); margin-bottom: 56px;
+    }
+    @media (max-width: 760px) { .profile__card { grid-template-columns: 1fr; gap: 24px; text-align: center; } }
+    .profile__photo { width: min(240px, 70vw); aspect-ratio: 1; border-radius: 50%; overflow: hidden; margin-inline: auto; border: 6px solid var(--white); box-shadow: var(--shadow); }
+    .profile__photo img { width: 100%; height: 100%; object-fit: cover; }
+    .profile__role { color: var(--main); font-size: .88rem; font-weight: 700; letter-spacing: .1em; margin: 0 0 .3em; }
+    .profile__name { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; margin: 0 0 .6em; color: var(--main-deep); }
+    .profile__name small { font-size: .55em; color: var(--ink-soft); margin-left: .4em; }
+    .profile__card p { font-size: .95rem; }
+    .profile__points { list-style: none; padding: 0; margin: 1em 0 0; display: grid; gap: 6px; text-align: left; }
+    .profile__points li { position: relative; padding-left: 1.6em; font-size: .92rem; }
+    .profile__points li::before { content: "◎"; position: absolute; left: 0; color: var(--main); }
+
+    .story { font-family: var(--serif); line-height: 2.1; }
+    .story__quote { margin: 1.8em 0; padding: 1.2em 1.6em; border-left: 3px solid var(--main); background: var(--main-pale); border-radius: 0 var(--radius) var(--radius) 0; color: var(--main-deep); font-weight: 600; }
+
+    .more { margin-top: 36px; border: 1px solid rgba(18, 131, 139, .25); border-radius: var(--radius); background: var(--white); }
+    .more > summary { list-style: none; cursor: pointer; padding: 18px 24px; text-align: center; font-weight: 700; color: var(--main); font-size: .95rem; }
+    .more > summary::-webkit-details-marker { display: none; }
+    .more > summary::after { content: "＋"; margin-left: .6em; }
+    .more[open] > summary::after { content: "－"; }
+    .more__body { padding: 8px clamp(20px, 4vw, 40px) 36px; font-size: .95rem; line-height: 2; }
+    .more__body h4 { font-family: var(--serif); font-weight: 600; font-size: 1.08rem; color: var(--main-deep); margin: 2em 0 .6em; padding-left: .8em; border-left: 3px solid var(--main); line-height: 1.6; }
+    .more__body h4:first-child { margin-top: .6em; }
+    .more__body blockquote { margin: 1em 0; padding: .8em 1.2em; background: var(--main-pale); border-radius: 10px; color: var(--main-deep); font-family: var(--serif); }
+
+    /* ---------- Information ---------- */
+    .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 720px) { .plans { grid-template-columns: 1fr; } }
+    .plan { background: var(--white); border-radius: 20px; padding: 32px; box-shadow: var(--shadow); }
+    .plan__head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .plan__icon { width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0; background: var(--main); color: var(--white); display: grid; place-items: center; }
+    .plan__icon svg { width: 26px; height: 26px; }
+    .plan h3 { font-family: var(--serif); font-weight: 600; font-size: 1.25rem; margin: 0; color: var(--main-deep); }
+    .plan ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+    .plan li { position: relative; padding-left: 1.4em; font-size: .95rem; }
+    .plan li::before { content: ""; position: absolute; left: 0; top: .78em; width: 7px; height: 7px; border-radius: 50%; background: var(--main); }
+
+    /* ---------- Contact ---------- */
+    .contact {
+      background: linear-gradient(rgba(10, 74, 79, .62), rgba(10, 74, 79, .82)), url("images/bg-window.webp") center 35% / cover no-repeat;
+      color: var(--white); text-align: center;
+    }
+    .contact .eyebrow { color: rgba(255,255,255,.8); }
+    .contact .section-title { color: var(--white); }
+    .contact p { color: rgba(255,255,255,.9); }
+    .contact__closing {
+      font-family: var(--serif); font-size: clamp(1rem, 2.6vw, 1.12rem); line-height: 2.2; letter-spacing: .08em; margin: 1.8em auto 2.2em;
+      max-width: 520px; padding: 2em 1.6em; border-radius: 28px;
+      background: rgba(205, 230, 240, .16); border: 1px solid rgba(255,255,255,.3);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .contact__box { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); border-radius: 20px; padding: 32px 24px; }
+    .contact .btn { background: var(--white); color: var(--main-deep) !important; margin-top: .6em; box-shadow: 0 10px 28px rgba(0,0,0,.18); }
+    .contact .btn:hover { background: var(--wood); }
+
+    /* ---------- Footer ---------- */
+    .footer { background: var(--main-deep); color: rgba(255,255,255,.8); padding: 48px 0 32px; text-align: center; }
+    .footer__name { font-family: var(--serif); font-size: 1.1rem; color: var(--white); margin-bottom: .2em; }
+    .footer__nav { display: flex; justify-content: center; gap: 1.4em; margin: 1.4em 0; }
+    .footer__nav a { color: var(--white); display: inline-flex; align-items: center; gap: .4em; text-decoration: none; font-size: .9rem; }
+    .footer__nav a:hover { text-decoration: underline; }
+    .footer__nav svg { width: 18px; height: 18px; }
+    .footer small { font-size: .75rem; opacity: .7; }
+
+    /* ---------- Hook (Instagram投稿1) ---------- */
+    .hook {
+      color: var(--white); text-align: center; padding: 128px 0;
+      background: linear-gradient(rgba(16, 38, 30, .62), rgba(16, 38, 30, .72)), url("images/bg-tree.webp") center 62% / cover no-repeat;
+    }
+    .hook__title { font-family: var(--serif); font-weight: 600; font-size: clamp(1.6rem, 5vw, 2.6rem); letter-spacing: .25em; margin: 0 0 1.3em; }
+    .hook__text { font-family: var(--serif); font-size: clamp(.98rem, 2.6vw, 1.15rem); line-height: 2.3; letter-spacing: .12em; color: rgba(255,255,255,.92); margin: 0 0 2.4em; }
+    .hook__answer {
+      display: inline-block; font-family: var(--serif); font-size: clamp(1rem, 2.8vw, 1.2rem); line-height: 2.2; letter-spacing: .08em;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); border-radius: 20px;
+      padding: 1.4em clamp(1.2em, 4vw, 2.4em); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    .hook__answer mark { background: #bfe0ea; color: var(--main-deep); padding: .1em .4em; border-radius: 4px; }
+    @media (max-width: 640px) { .hook { padding: 96px 0; } }
+
+    /* ---------- Price ---------- */
+    .price {
+      margin-top: 24px; background: var(--white); border: 2px solid var(--main); border-radius: 20px; padding: 24px 32px;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 28px; text-align: center;
+    }
+    .price__label { display: inline-block; background: var(--main); color: var(--white); font-size: .8rem; font-weight: 700; letter-spacing: .15em; padding: .2em 1em; border-radius: 999px; margin-right: .8em; vertical-align: middle; }
+    .price__value { font-family: var(--serif); font-weight: 600; font-size: 1.6rem; color: var(--main-deep); vertical-align: middle; }
+    .price p { margin: 0; color: var(--ink-soft); font-size: .95rem; }
+
+    /* ---------- Fade-in ---------- */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s ease; }
+    .reveal.is-visible { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+    }
+
+    .pc-only { display: inline; }
+    .sp-only { display: none; }
+    @media (max-width: 640px) { .pc-only { display: none; } .sp-only { display: inline; } }
+
+    /* ===== ロゴ化セッション用の追加スタイル ===== */
+    .hook__text:first-child { margin-top: 0; }
+    .trio { list-style: none; padding: 0; margin: 0 0 72px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .trio__item { background: var(--main-pale); border-radius: 20px; padding: 32px 24px; text-align: center; position: relative; }
+    .trio__item:not(:last-child)::after {
+      content: ""; position: absolute; right: -15px; top: 50%; width: 10px; height: 10px; z-index: 1;
+      border-top: 2px solid var(--main); border-right: 2px solid var(--main); transform: translateY(-50%) rotate(45deg);
+    }
+    .trio__icon { width: 60px; height: 60px; border-radius: 50%; background: var(--white); color: var(--main); display: grid; place-items: center; margin: 0 auto 16px; box-shadow: var(--shadow); }
+    .trio__icon svg { width: 30px; height: 30px; }
+    .trio__item h3 { font-family: var(--serif); font-weight: 600; font-size: 1.15rem; color: var(--main-deep); margin: 0 0 .6em; }
+    .trio__item p { margin: 0; font-size: .93rem; text-align: left; }
+    @media (max-width: 760px) {
+      .trio { grid-template-columns: 1fr; gap: 28px; margin-bottom: 56px; }
+      .trio__item:not(:last-child)::after { right: auto; left: 50%; top: auto; bottom: -19px; transform: translateX(-50%) rotate(135deg); }
+    }
+
+    .course { background: var(--white); border-radius: 24px; box-shadow: var(--shadow); padding: clamp(24px, 5vw, 48px); margin-bottom: 32px; }
+    .course__head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding-bottom: 24px; margin-bottom: 28px; border-bottom: 1px solid rgba(18, 131, 139, .18); }
+    .course__no { font-family: var(--serif); font-size: 2.6rem; line-height: 1; color: var(--main); opacity: .4; }
+    .course__head > div { flex: 1 1 240px; }
+    .course__name { font-family: var(--serif); font-weight: 600; font-size: clamp(1.35rem, 3.6vw, 1.7rem); color: var(--main-deep); margin: 0; line-height: 1.5; }
+    .course__catch { margin: 0; color: var(--ink-soft); font-size: .95rem; }
+    .course__meta { margin: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+    .course__meta span { background: var(--main); color: var(--white); font-weight: 700; font-size: .9rem; padding: .35em 1.1em; border-radius: 999px; white-space: nowrap; }
+    .course__meta span + span { background: var(--white); color: var(--main-deep); box-shadow: inset 0 0 0 1.5px var(--main); }
+    .course__lead { margin: -8px 0 24px; }
+    .course__note { margin: 24px 0 0; padding: 1em 1.3em; background: var(--main-pale); border-radius: 12px; font-size: .93rem; color: var(--main-deep); }
+
+    .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .steps__item { border: 1px solid rgba(18, 131, 139, .18); border-radius: 16px; padding: 24px; background: #fffdfa; }
+    .steps__label { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .2em; color: var(--main); margin-bottom: .5em; }
+    .steps__item h4 { font-family: var(--serif); font-weight: 600; font-size: 1.12rem; color: var(--main-deep); margin: 0 0 .7em; line-height: 1.6; display: flex; flex-wrap: wrap; align-items: center; gap: .3em .7em; }
+    .steps__item h4 small { font-family: var(--sans); font-size: .76rem; font-weight: 700; color: var(--main-dark); background: var(--main-light); padding: .15em .9em; border-radius: 999px; letter-spacing: .06em; }
+    .steps__item p { margin: 0; font-size: .95rem; }
+    @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+
+    .compare { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .compare > div { border: 1.5px dashed rgba(18, 131, 139, .4); border-radius: 16px; padding: 22px 24px; }
+    .compare__title { font-family: var(--serif); font-weight: 600; color: var(--main-deep); margin: 0 0 .4em; }
+    .compare p:last-child { margin: 0; font-size: .93rem; }
+    @media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
+
+    .team { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .member { background: var(--main-pale); border-radius: 20px; padding: 28px 24px; }
+    .member__role { display: inline-block; font-size: .76rem; font-weight: 700; letter-spacing: .12em; color: var(--white); background: var(--main); padding: .2em 1em; border-radius: 999px; }
+    .member h3 { font-family: var(--serif); font-weight: 600; font-size: 1.4rem; color: var(--main-deep); margin: .5em 0 .4em; }
+    .member p { margin: 0; font-size: .93rem; }
+    @media (max-width: 760px) { .team { grid-template-columns: 1fr; } }
+
+    .price--two { margin-top: 0; gap: 14px 40px; }
+    .price--two .price__value { font-size: clamp(1.1rem, 3.6vw, 1.45rem); }
+    @media (max-width: 640px) {
+      .price--two { padding: 22px 16px; }
+      .price--two .price__label { display: block; width: fit-content; margin: 0 auto .5em; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a href="#top" class="logo"><span class="logo__mark" aria-hidden="true"></span>痛みと願いのロゴ化</a>
+      <nav class="nav" aria-label="メインナビゲーション">
+        <a href="#about">セッションについて</a>
+        <a href="#course">2つのコース</a>
+        <a href="#target">おすすめの方</a>
+        <a href="#team">メンバー</a>
+        <a href="#info">ご案内</a>
+        <a href="#contact" class="btn">お申し込み</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="narrow">
+        <p class="hero__sub reveal">チームかもえさ presents</p>
+        <h1 class="hero__title reveal">痛みと願いの<br>ロゴ化セッション</h1>
+        <p class="hero__catch reveal">あなたの内側にあるものを、<br><em>言葉と絵</em>にして受け取る時間。</p>
+        <div class="hero__actions reveal">
+          <a href="#contact" class="btn">申し込む・問い合わせる</a>
+          <a href="#course" class="btn btn--outline">2つのコースを見る</a>
+        </div>
+      </div>
+      <div class="hero__visual reveal">
+        <picture>
+          <source srcset="images/hero.webp" type="image/webp">
+          <img src="images/hero.jpg" width="2000" height="1116"
+               alt="木のテーブルの上に並べられた痛みカード（青緑）と願いカード（白）">
+        </picture>
+      </div>
+    </section>
+
+    <!-- Intro -->
+    <section class="hook" id="about">
+      <div class="narrow">
+        <p class="hook__text reveal">
+          私たちの中には、<br class="sp-only">これまでの人生で感じてきた<br>「痛み」があります。<br>
+          そして、その奥には、<br>大切にしたい「願い」があります。
+        </p>
+        <p class="hook__answer reveal">
+          自分で見つめる自分と、<br class="sp-only">誰かの目に映る自分。<br>
+          その両方に出会いながら、<br><mark>今の自分を受け取っていく時間</mark>です。
+        </p>
+      </div>
+    </section>
+
+    <!-- Flow overview -->
+    <section class="bg-white">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">ABOUT</span>
+          <h2 class="section-title">見つめて、受け取る。</h2>
+          <p class="lead narrow" style="text-wrap: pretty;">
+            このセッションでは、カードを使った対話を通して、自分の中にある痛みと願いを見つめていきます。
+            そこから浮かび上がってきたものを、周りの人たちが受け取り、それぞれの感性で言葉や絵にして贈ります。
+          </p>
+        </div>
+
+        <ol class="trio">
+          <li class="trio__item reveal">
+            <span class="trio__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="11" height="15" rx="2" transform="rotate(-8 8.5 13.5)"/><rect x="10" y="4" width="11" height="15" rx="2" transform="rotate(8 15.5 11.5)"/></svg></span>
+            <h3>カードで見つめる</h3>
+            <p>「痛みカード」と「願いカード」を並べながら、痛みと願いのつながりを目に見える形にします。</p>
+          </li>
+          <li class="trio__item reveal">
+            <span class="trio__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 6l8 7 8-7"/></svg></span>
+            <h3>言葉を受け取る</h3>
+            <p>対話を聴いた人たちが、感じたことを手紙のように綴り、声に出して読んで贈ります。</p>
+          </li>
+          <li class="trio__item reveal">
+            <span class="trio__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.3-1-1.6-1-2.7 0-1 .8-1.6 1.8-1.6H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></span>
+            <h3>絵を受け取る</h3>
+            <p>言葉にならないものを、色や形で。その場で描かれた一枚が、あなたの願いの「ロゴ」になります。</p>
+          </li>
+        </ol>
+
+        <div class="about__intro reveal">
+          <picture>
+            <source srcset="images/cards-spread.webp" type="image/webp">
+            <img src="images/cards-spread.jpg" width="720" height="760" loading="lazy" alt="テーブルに並べられた痛みカードと願いカード">
+          </picture>
+          <div>
+            <p class="sub-title" style="text-align:left; margin-bottom:.6em;">なぜ、痛みから見つめるの？</p>
+            <p>いきなり「あなたの願いは？」と聞かれても、なかなか言葉になりません。けれど痛みは、身体の感覚として確かに感じられます。</p>
+            <p style="margin:0">痛みの裏側には、<span class="marker">本当はこうあってほしい</span>という願いがあります。だからこのセッションでは、まず痛みを見つめ、そこから願いへとたどっていきます。カードを使うので、深刻になりすぎずに扱えます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Courses -->
+    <section class="bg-pale" id="course">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">COURSE</span>
+          <h2 class="section-title">2つのコースをご用意しています</h2>
+        </div>
+
+        <!-- Standard -->
+        <article class="course reveal">
+          <header class="course__head">
+            <span class="course__no">01</span>
+            <div>
+              <h3 class="course__name">スタンダードコース</h3>
+              <p class="course__catch">言葉と絵で受け取る、フルセッション</p>
+            </div>
+            <p class="course__meta"><span>2時間30分</span><span>25,000円</span></p>
+          </header>
+          <ol class="steps">
+            <li class="steps__item">
+              <span class="steps__label">STEP 1</span>
+              <h4>痛みと願いを見つめる<small>うってぃ</small></h4>
+              <p>「痛みカード」と「願いカード」を使いながら、自分の内側にあるものを丁寧に見つめます。これまで感じてきた痛みと、その奥にある願い。それぞれのつながりを対話を通して整理し、見える形にしていきます。</p>
+            </li>
+            <li class="steps__item">
+              <span class="steps__label">STEP 2</span>
+              <h4>言葉を受け取る<small>かんな</small></h4>
+              <p>対話を聴いて感じたことを、その場にいるそれぞれが文章にします。手紙のように綴られた言葉を、一人ひとりが声に出して読み、あなたに贈ります。誰かの言葉を通して、新しい自分に出会うかもしれません。</p>
+            </li>
+            <li class="steps__item">
+              <span class="steps__label">STEP 3</span>
+              <h4>絵を受け取る<small>ゆーき</small></h4>
+              <p>対話や手紙から感じたものを、今度は色や形で表現します。それぞれが自由に絵を描き、作品に込めた想いを伝えながら、あなたに贈ります。言葉にならないものも、絵だからこそ伝わることがあります。</p>
+            </li>
+            <li class="steps__item">
+              <span class="steps__label">STEP 4</span>
+              <h4>感じたことを分かち合う</h4>
+              <p>最後に、セッションを通して感じたことや、受け取ったものを分かち合います。言葉と絵を、お守りのように持ち帰っていただけたら嬉しいです。</p>
+            </li>
+          </ol>
+          <p class="course__note">ご自身も、自分に向けて言葉や絵をかいてみることができます（かかなくても大丈夫です）。</p>
+        </article>
+
+        <!-- Short -->
+        <article class="course reveal">
+          <header class="course__head">
+            <span class="course__no">02</span>
+            <div>
+              <h3 class="course__name">ショートコース</h3>
+              <p class="course__catch">願いを見つめ、ひとつの絵として受け取る</p>
+            </div>
+            <p class="course__meta"><span>1時間</span><span>16,000円</span></p>
+          </header>
+          <p class="course__lead">スタンダードコースの「痛みと願いの構造化」と「絵による表現」を組み合わせたコースです。</p>
+          <ol class="steps steps--two">
+            <li class="steps__item">
+              <span class="steps__label">STEP 1</span>
+              <h4>痛みと願いを見つめる<small>うってぃ</small></h4>
+              <p>カードと対話を通して、自分の内側にある痛みと願いを整理します。</p>
+            </li>
+            <li class="steps__item">
+              <span class="steps__label">STEP 2</span>
+              <h4>願いを絵にする<small>ゆーき</small></h4>
+              <p>対話から感じ取ったものを、ゆーきがその場で一枚の絵に描きます。完成した絵に込めた想いをお伝えし、あなたにプレゼントします。</p>
+            </li>
+          </ol>
+          <p class="course__note">短い時間の中で、自分の願いにふれ、それを目に見える形で受け取るセッションです。</p>
+        </article>
+
+        <div class="compare reveal">
+          <div>
+            <p class="compare__title">スタンダードはこんな方に</p>
+            <p>自分の内面とじっくり向き合いたい方。<br>たくさんのまなざしから、言葉と絵の両方を受け取りたい方。</p>
+          </div>
+          <div>
+            <p class="compare__title">ショートはこんな方に</p>
+            <p>まずは気軽に、自分の願いを目に見える形にしてみたい方。<br>長い時間をとるのが難しい方。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Target -->
+    <section class="target" id="target">
+      <div class="narrow">
+        <div class="section-head reveal">
+          <span class="eyebrow">FOR YOU</span>
+          <h2 class="section-title">こんな方におすすめです</h2>
+        </div>
+        <div class="target__panel reveal">
+          <ul class="check-list">
+            <li>自分の内側にある<span class="hl hl--pink">想いや願いを見つめてみたい</span></li>
+            <li>繰り返し感じる<span class="hl hl--yellow">痛みや引っかかりについて知りたい</span></li>
+            <li>自分では<span class="hl hl--blue">気づいていない自分に出会ってみたい</span></li>
+            <li>誰かのまなざしを通して、<span class="hl hl--green">自分を受け取ってみたい</span></li>
+            <li>今の自分を、<span class="hl hl--purple">言葉や絵として残しておきたい</span></li>
+          </ul>
+          <p class="target__msg">うまく話す必要も、<br class="sp-only">絵が上手である必要もありません。<br><strong>今のあなたのままで、どうぞ。</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team -->
+    <section class="bg-white" id="team">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">TEAM</span>
+          <h2 class="section-title">ご一緒するメンバー</h2>
+          <p class="lead">うってぃ・かんな・ゆーきの3人による「チームかもえさ」がご一緒します。</p>
+        </div>
+        <div class="team">
+          <article class="member reveal">
+            <span class="member__role">カードと対話</span>
+            <h3>うってぃ</h3>
+            <p>「痛みと願いカード」の考案者。カードを使って、痛みと願いのつながりを一緒に整理していきます。</p>
+          </article>
+          <article class="member reveal">
+            <span class="member__role">言葉</span>
+            <h3>かんな</h3>
+            <p>対話に耳を澄ませ、感じたことを言葉にして贈ります。言葉を受け取る時間をご案内します。</p>
+          </article>
+          <article class="member reveal">
+            <span class="member__role">絵</span>
+            <h3>ゆーき</h3>
+            <p>話を聴きながら、感じ取ったものを色と形で描きます。絵を受け取る時間をご案内します。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Information -->
+    <section class="bg-pale" id="info">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">INFORMATION</span>
+          <h2 class="section-title">セッションのご案内</h2>
+        </div>
+        <div class="price price--two reveal">
+          <div><span class="price__label">スタンダード</span><span class="price__value">2時間30分　25,000円</span></div>
+          <div><span class="price__label">ショート</span><span class="price__value">1時間　16,000円</span></div>
+        </div>
+        <div class="plans" style="margin-top:24px;">
+          <article class="plan reveal">
+            <div class="plan__head">
+              <span class="plan__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+              <h3>開催について</h3>
+            </div>
+            <ul>
+              <li>実際のカードや画材にふれながら行う、対面でのセッションが基本です</li>
+              <li>開催場所・日程はご相談のうえ決定します</li>
+              <li>会場によっては、別途会場費をいただく場合があります</li>
+              <li>リトリートや合宿のプログラムとして行うこともできます</li>
+            </ul>
+          </article>
+          <article class="plan reveal">
+            <div class="plan__head">
+              <span class="plan__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.35-9.5-8.5C.8 9.6 2.5 5 6.5 5c2.1 0 3.5 1.2 5.5 3.2C14 6.2 15.4 5 17.5 5c4 0 5.7 4.6 4 7.5C19 16.65 12 21 12 21z"/></svg></span>
+              <h3>安心してご参加いただくために</h3>
+            </div>
+            <ul>
+              <li>話したくないことは、話さなくて大丈夫です</li>
+              <li>絵や文章の上手・下手は問いません</li>
+              <li>受け取った言葉と絵は、そのままお持ち帰りいただけます</li>
+              <li>医療行為や治療を目的としたものではありません</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact" id="contact">
+      <div class="narrow reveal">
+        <span class="eyebrow">BOOKING &amp; CONTACT</span>
+        <h2 class="section-title">お申し込み・お問い合わせ</h2>
+        <p class="contact__closing">
+          自分で見つめる自分と、<br>
+          誰かの目に映る自分。<br><br>
+          言葉と絵を、お守りのように<br>
+          持ち帰る時間を、ご一緒に。
+        </p>
+        <div class="contact__box">
+          <p style="font-weight:700; margin-bottom:.4em;">お申し込み・お問い合わせ</p>
+          <p style="font-size:.92rem;">ご希望のコースと、ご都合のよい時期・場所を添えて<br class="pc-only">InstagramのDMからお気軽にご連絡ください。</p>
+          <a href="https://www.instagram.com/takeshi.uchida.5203/" class="btn" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+            InstagramのDMで連絡する
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__name">痛みと願いのロゴ化セッション</p>
+      <p>チームかもえさ（うってぃ・かんな・ゆーき）</p>
+      <nav class="footer__nav" aria-label="関連リンク">
+        <a href="./">「痛みと願いカード」について</a>
+        <a href="https://www.instagram.com/takeshi.uchida.5203/" target="_blank" rel="noopener">Instagram</a>
+      </nav>
+      <small>&copy; 2026 チームかもえさ - 痛みと願いのロゴ化セッション</small>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var items = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) {
+        items.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      items.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+</body>
+</html>
