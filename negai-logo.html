@@ -204,9 +204,14 @@
     /* メンバー */
     .team { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
     .member { text-align: center; }
-    .member__face { width: 108px; height: 108px; margin: 0 auto 18px; display: grid; place-items: center; font-family: var(--mincho); font-weight: 700; font-size: 2.6rem; color: var(--white); letter-spacing: 0; background: var(--navy); border-radius: 46% 54% 52% 48% / 55% 46% 54% 45%; }
-    .member:nth-child(2) .member__face { background: var(--pink); border-radius: 55% 45% 48% 52% / 46% 56% 44% 54%; }
-    .member:nth-child(3) .member__face { background: var(--purple); border-radius: 48% 52% 56% 44% / 52% 48% 52% 48%; }
+    .member__face { position: relative; width: 168px; height: 168px; margin: 0 auto 22px; }
+    .member__face::before { content: ""; position: absolute; inset: 0; background: var(--navy); border-radius: 46% 54% 52% 48% / 55% 46% 54% 45%; transform: translate(9px, 9px) rotate(6deg); }
+    .member__face picture { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 46% 54% 52% 48% / 55% 46% 54% 45%; }
+    .member__face img { width: 100%; height: 100%; object-fit: cover; }
+    .member:nth-child(2) .member__face::before { background: var(--pink); transform: translate(-9px, 8px) rotate(-5deg); }
+    .member:nth-child(2) .member__face::before, .member:nth-child(2) .member__face picture { border-radius: 55% 45% 48% 52% / 46% 56% 44% 54%; }
+    .member:nth-child(3) .member__face::before { background: var(--purple); transform: translate(8px, -8px) rotate(4deg); }
+    .member:nth-child(3) .member__face::before, .member:nth-child(3) .member__face picture { border-radius: 48% 52% 56% 44% / 52% 48% 52% 48%; }
     .member small { font-family: var(--pen); font-weight: 600; color: var(--ink-soft); letter-spacing: .12em; }
     .member h3 { font-size: 1.5rem; margin: .1em 0 .4em; }
     .member p { margin: 0; font-size: .93rem; text-align: left; }
@@ -494,19 +499,19 @@
         </div>
         <div class="team">
           <article class="member rv">
-            <div class="member__face" aria-hidden="true">う</div>
+            <div class="member__face"><picture><source srcset="images/member-utty.webp" type="image/webp"><img src="images/member-utty.jpg" width="400" height="400" loading="lazy" alt="うってぃの写真。緑の木々を背に、眼鏡をかけて笑っている"></picture></div>
             <small>カードと対話</small>
             <h3>うってぃ</h3>
             <p>「痛みと願いカード」の考案者。カードを使って、痛みと願いのつながりを一緒に整理していきます。</p>
           </article>
           <article class="member rv">
-            <div class="member__face" aria-hidden="true">か</div>
+            <div class="member__face"><picture><source srcset="images/member-kanna.webp" type="image/webp"><img src="images/member-kanna.jpg" width="400" height="400" loading="lazy" alt="かんなの写真。大きく口を開けて笑っている"></picture></div>
             <small>言葉</small>
             <h3>かんな</h3>
             <p>対話に耳を澄ませ、感じたことを言葉にして贈ります。言葉を受け取る時間をご案内します。</p>
           </article>
           <article class="member rv">
-            <div class="member__face" aria-hidden="true">ゆ</div>
+            <div class="member__face"><picture><source srcset="images/member-yuki.webp" type="image/webp"><img src="images/member-yuki.jpg" width="400" height="400" loading="lazy" alt="ゆーきの写真。木のテーブルで、色ペンを横に置いて絵を描いている"></picture></div>
             <small>絵</small>
             <h3>ゆーき</h3>
             <p>話を聴きながら、感じ取ったものを色と形で描きます。絵を受け取る時間をご案内します。</p>
