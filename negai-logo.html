@@ -404,7 +404,13 @@
     .member p { margin: 0; font-size: .93rem; }
     @media (max-width: 760px) { .team { grid-template-columns: 1fr; } }
 
+    .course__meta { align-items: center; }
+    .course__meta em { font-style: normal; font-size: .78rem; font-weight: 700; color: #b0552b; letter-spacing: .08em; }
     .price--two { margin-top: 0; gap: 14px 40px; }
+    .price .price__limited { flex-basis: 100%; }
+    .price__limited strong { color: #b0552b; }
+    .btn--pending { background: rgba(255,255,255,.25) !important; color: var(--white) !important; box-shadow: none !important; cursor: default; }
+    .btn--pending:hover { transform: none; }
     .price--two .price__value { font-size: clamp(1.1rem, 3.6vw, 1.45rem); }
     @media (max-width: 640px) {
       .price--two { padding: 22px 16px; }
@@ -524,7 +530,7 @@
               <h3 class="course__name">スタンダードコース</h3>
               <p class="course__catch">言葉と絵で受け取る、フルセッション</p>
             </div>
-            <p class="course__meta"><span>2時間30分</span><span>25,000円</span></p>
+            <p class="course__meta"><span>2時間30分</span><span>25,000円</span><em>期間限定価格</em></p>
           </header>
           <ol class="steps">
             <li class="steps__item">
@@ -559,7 +565,7 @@
               <h3 class="course__name">ショートコース</h3>
               <p class="course__catch">願いを見つめ、ひとつの絵として受け取る</p>
             </div>
-            <p class="course__meta"><span>1時間</span><span>16,000円</span></p>
+            <p class="course__meta"><span>1時間</span><span>16,000円</span><em>期間限定価格</em></p>
           </header>
           <p class="course__lead">スタンダードコースの「痛みと願いの構造化」と「絵による表現」を組み合わせたコースです。</p>
           <ol class="steps steps--two">
@@ -648,6 +654,7 @@
         <div class="price price--two reveal">
           <div><span class="price__label">スタンダード</span><span class="price__value">2時間30分　25,000円</span></div>
           <div><span class="price__label">ショート</span><span class="price__value">1時間　16,000円</span></div>
+          <p class="price__limited">いずれも<strong>期間限定価格</strong>です</p>
         </div>
         <div class="plans" style="margin-top:24px;">
           <article class="plan reveal">
@@ -691,11 +698,11 @@
         </p>
         <div class="contact__box">
           <p style="font-weight:700; margin-bottom:.4em;">お申し込み・お問い合わせ</p>
-          <p style="font-size:.92rem;">ご希望のコースと、ご都合のよい時期・場所を添えて<br class="pc-only">InstagramのDMからお気軽にご連絡ください。</p>
-          <a href="https://www.instagram.com/takeshi.uchida.5203/" class="btn" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
-            InstagramのDMで連絡する
-          </a>
+          <p style="font-size:.92rem;">ご希望のコースと、ご都合のよい時期・場所を添えて<br class="pc-only">かもえさ公式LINEからお気軽にご連絡ください。</p>
+          <!-- TODO: 公式LINEの友だち追加URLが決まったら、下の span を
+               <a href="https://lin.ee/XXXX" class="btn" target="_blank" rel="noopener">かもえさ公式LINEで連絡する</a>
+               に差し替える -->
+          <span class="btn btn--pending">かもえさ公式LINE（リンク準備中）</span>
         </div>
       </div>
     </section>
@@ -708,7 +715,6 @@
       <p>チームかもえさ（うってぃ・かんな・ゆーき）</p>
       <nav class="footer__nav" aria-label="関連リンク">
         <a href="./">「痛みと願いカード」について</a>
-        <a href="https://www.instagram.com/takeshi.uchida.5203/" target="_blank" rel="noopener">Instagram</a>
       </nav>
       <small>&copy; 2026 チームかもえさ - 痛みと願いのロゴ化セッション</small>
     </div>
