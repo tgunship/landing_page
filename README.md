@@ -12,6 +12,7 @@ index.html        … 「痛みと願いカード」LP本体（HTML / CSS / JS �
 negai-logo.html   … 「痛みと願いのロゴ化セッション」LP（チームかもえさ）
 docs/negai-logo-brief.md … ロゴ化セッションLPの前提情報と未確定事項
 images/hero.jpg   … メインビジュアル
+images/negai-logo-hero.jpg … ロゴ化セッションLPのメインビジュアル（webp版、SNSシェア用の negai-logo-ogp.jpg あり）
 images/hero.webp  … メインビジュアル（WebP版）
 images/ogp.jpg    … SNSシェア用画像（1200px幅）
 images/cards-spread.jpg … カードを並べた写真（カード紹介用、webp版あり）
