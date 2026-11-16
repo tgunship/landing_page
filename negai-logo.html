@@ -397,6 +397,12 @@
     .compare p:last-child { margin: 0; font-size: .93rem; }
     @media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
 
+    .voices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .voice { margin: 0; background: var(--white); border-radius: 20px; padding: 32px 26px 26px; box-shadow: var(--shadow); position: relative; display: flex; flex-direction: column; }
+    .voice::before { content: "“"; position: absolute; top: 2px; left: 18px; font-family: var(--serif); font-size: 4rem; line-height: 1; color: var(--main); opacity: .22; }
+    .voice blockquote { margin: 0 0 1.2em; font-family: var(--serif); font-size: .98rem; line-height: 2; flex: 1; }
+    .voice figcaption { font-size: .82rem; color: var(--ink-soft); border-top: 1px dashed rgba(18, 131, 139, .3); padding-top: .9em; }
+    @media (max-width: 860px) { .voices { grid-template-columns: 1fr; } }
     .team { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
     .member { background: var(--main-pale); border-radius: 20px; padding: 28px 24px; }
     .member__role { display: inline-block; font-size: .76rem; font-weight: 700; letter-spacing: .12em; color: var(--white); background: var(--main); padding: .2em 1em; border-radius: 999px; }
@@ -409,8 +415,8 @@
     .price--two { margin-top: 0; gap: 14px 40px; }
     .price .price__limited { flex-basis: 100%; }
     .price__limited strong { color: #b0552b; }
-    .btn--pending { background: rgba(255,255,255,.25) !important; color: var(--white) !important; box-shadow: none !important; cursor: default; }
-    .btn--pending:hover { transform: none; }
+    .contact .btn--pending { background: rgba(255,255,255,.25) !important; color: var(--white) !important; box-shadow: none !important; cursor: default; }
+    .contact .btn--pending:hover { transform: none; background: rgba(255,255,255,.25); }
     .price--two .price__value { font-size: clamp(1.1rem, 3.6vw, 1.45rem); }
     @media (max-width: 640px) {
       .price--two { padding: 22px 16px; }
@@ -427,6 +433,7 @@
         <a href="#about">セッションについて</a>
         <a href="#course">2つのコース</a>
         <a href="#target">おすすめの方</a>
+        <a href="#voice">参加者の声</a>
         <a href="#team">メンバー</a>
         <a href="#info">ご案内</a>
         <a href="#contact" class="btn">お申し込み</a>
@@ -612,6 +619,30 @@
             <li>今の自分を、<span class="hl hl--purple">言葉や絵として残しておきたい</span></li>
           </ul>
           <p class="target__msg">うまく話す必要も、<br class="sp-only">絵が上手である必要もありません。<br><strong>今のあなたのままで、どうぞ。</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Voices（掲載にはご本人の承諾が必要。承諾が取れるまで公開しない） -->
+    <section class="bg-pale" id="voice">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">VOICE</span>
+          <h2 class="section-title">参加された方の声</h2>
+        </div>
+        <div class="voices">
+          <figure class="voice reveal">
+            <blockquote>文章に込められている何かを感じたとき、自分が揺さぶられているのがわかりました。「感じてもらえるから、自分も感じられる」ということなのかなと。他者なしではできないことを、こんなに贅沢にやっていただけたことが、とても嬉しいです。</blockquote>
+            <figcaption>T さん（スタンダードコース）</figcaption>
+          </figure>
+          <figure class="voice reveal">
+            <blockquote>良き時間でした。自分一人ではできないことを、たくさんの協力と支えがあって感じられたことが、すごく嬉しいです。「こう生きていきたい」が本当に明確になったので、軽やかにチャレンジしていきたいと思っています。</blockquote>
+            <figcaption>S さん（スタンダードコース）</figcaption>
+          </figure>
+          <figure class="voice reveal">
+            <blockquote>絵を描くのっていいな、楽しいんだなと思えたのが、大きな気づきでした。これまでは「何の役に立つのか」で選んできたけれど、直感だけで選ぶと、また違う体験があるんだなと。可能性が広がった感じがしています。</blockquote>
+            <figcaption>K さん（リトリートでのセッション）</figcaption>
+          </figure>
         </div>
       </div>
     </section>
