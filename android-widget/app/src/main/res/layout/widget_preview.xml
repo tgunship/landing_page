@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 2×2 ウィジェット：上段2マスに痛みカード、下段2マスに願いカード -->
+<!--
+  2×2 ウィジェット：上段に痛みカード、下段に願いカード。
+  上下それぞれの枠でカードの大きさを決め、痛みカードは上段の中央、
+  願いカードは下段の上端にそろえて、2枚の間隔を詰めている。
+  （下段の paddingBottom=2dp は上段と同じ高さの枠でカードの大きさを揃えるため）
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="4dp">
 
     <ImageView
-        
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:adjustViewBounds="false"
+        android:paddingBottom="2dp"
         android:scaleType="fitCenter"
         android:src="@drawable/pain_07"
         android:contentDescription="@string/label_pain" />
 
-    <ImageView
-        
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="4dp"
-        android:adjustViewBounds="false"
-        android:scaleType="fitCenter"
-        android:src="@drawable/wish_07"
-        android:contentDescription="@string/label_wish" />
+        android:paddingBottom="2dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:src="@drawable/wish_07"
+            android:contentDescription="@string/label_wish" />
+    </FrameLayout>
 </LinearLayout>
