@@ -25,6 +25,11 @@ class MainActivity : Activity() {
 
         findViewById<View>(R.id.time_row).setOnClickListener { pickRolloverTime() }
         findViewById<Button>(R.id.reset).setOnClickListener { confirmReset() }
+        findViewById<Button>(R.id.advance).setOnClickListener {
+            CardDeck.advanceNow(this)
+            CardWidgetProvider.updateAll(this)
+            refresh()
+        }
         findViewById<Button>(R.id.show_list).setOnClickListener {
             startActivity(Intent(this, CardListActivity::class.java))
         }

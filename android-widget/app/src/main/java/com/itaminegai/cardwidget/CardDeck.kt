@@ -53,6 +53,16 @@ object CardDeck {
             .commit()
     }
 
+    /** 次の切り替え時刻を待たずに、両方の山札を次のカードへ進める。 */
+    @Synchronized
+    fun advanceNow(context: Context) {
+        today(context) // 時刻による切り替えが溜まっていれば先に反映
+        val prefs = prefs(context)
+        val editor = prefs.edit()
+        Kind.values().forEach { advance(prefs, editor, it) }
+        editor.commit()
+    }
+
     /**
      * 表示した回数をリセットする。両方の山札を新しくシャッフルし、1周目の1日目から始め直す。
      * 切り替え時刻の設定はそのまま。

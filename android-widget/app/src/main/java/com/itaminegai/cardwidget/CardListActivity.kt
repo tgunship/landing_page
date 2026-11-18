@@ -80,10 +80,9 @@ class CardListActivity : Activity() {
                 contentDescription = cards.text(kind, position)
             }
             val todayIndex = if (kind == CardDeck.Kind.PAIN) today.pain.cardIndex else today.wish.cardIndex
-            view.findViewById<TextView>(R.id.card_label).text = context.getString(
-                if (position == todayIndex) R.string.card_number_today else R.string.card_number,
-                position + 1,
-            )
+            // 今日のカードにだけ印を出す（行の高さをそろえるため他は INVISIBLE）
+            view.findViewById<TextView>(R.id.card_label).visibility =
+                if (position == todayIndex) View.VISIBLE else View.INVISIBLE
             return view
         }
 

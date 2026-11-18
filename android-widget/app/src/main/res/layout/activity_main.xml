@@ -11,12 +11,37 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <!-- アプリ名 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="40dp"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                android:src="@drawable/app_mark" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="@string/app_name"
+                android:textColor="@color/teal"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
             android:text="@string/today_title"
             android:textColor="@color/teal"
-            android:textSize="22sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <TextView
@@ -66,6 +91,15 @@
             android:layout_marginTop="4dp"
             android:textColor="#777777"
             android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/advance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/teal"
+            android:text="@string/advance"
+            android:textColor="@color/paper" />
 
         <!-- 切り替え時刻の設定 -->
         <LinearLayout
