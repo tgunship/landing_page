@@ -65,9 +65,17 @@
       margin-top: 14px; padding: 16px; border-radius: 20px; background: var(--paper);
       box-shadow: 0 8px 26px rgba(10, 74, 79, .09);
     }
-    .label { margin: 0 0 6px; font-size: .78rem; font-weight: 700; color: var(--sub); letter-spacing: .06em; transition: color .3s; }
+    /* カードは一回り小さく。結果を見るとき、痛みカード〜おまけのお題が1画面に収まる大きさまで縮める */
+    .panel {
+      --card-w: min(80%, max(148px, calc((100vh - 370px) * .769)));
+    }
+    @supports (height: 100svh) {
+      .panel { --card-w: min(80%, max(148px, calc((100svh - 370px) * .769))); }
+    }
+    .label, .card { width: var(--card-w); margin-inline: auto; }
+    .label { margin-top: 0; margin-bottom: 6px; font-size: .78rem; font-weight: 700; color: var(--sub); letter-spacing: .06em; transition: color .3s; }
     .label.is-on { color: var(--teal); }
-    .label + .card { margin-bottom: 14px; }
+    .label + .card { margin-bottom: 12px; }
     .card { position: relative; perspective: 1400px; }
     .card:last-child { margin-bottom: 0; }
     .card__inner { position: relative; transform-style: preserve-3d; }
@@ -85,16 +93,16 @@
     .question { display: none; }
     .question.is-shown, .actions.is-shown { display: block; }
     .question__text {
-      margin: 24px 0 0; text-align: center; white-space: pre-line;
-      font-family: var(--serif); font-weight: 600; font-size: 1.12rem; line-height: 1.8; color: var(--teal-dark);
+      margin: 18px 0 0; text-align: center; white-space: pre-line;
+      font-family: var(--serif); font-weight: 600; font-size: 1.05rem; line-height: 1.7; color: var(--teal-dark);
     }
     .prompt-open {
-      display: block; margin: 16px auto 0; height: 44px; padding: 0 18px; border-radius: 22px;
+      display: block; margin: 14px auto 0; height: 44px; padding: 0 18px; border-radius: 22px;
       border: 1px solid var(--line); background: var(--paper); color: var(--teal); font-size: .9rem;
     }
     .prompt-open[hidden] { display: none; }
     .prompt {
-      display: none; margin-top: 12px; padding: 14px 18px 10px; border-radius: 16px; background: var(--teal-soft);
+      display: none; margin-top: 12px; padding: 12px 16px 8px; border-radius: 16px; background: var(--teal-soft);
     }
     .prompt.is-shown { display: block; }
     .prompt__chip {
@@ -546,8 +554,7 @@
       }
       setButton('もう一度', true);
       setTimeout(() => {
-        const top = el.question.getBoundingClientRect().top + scrollY - el.message.offsetHeight - 40;
-        if (top > scrollY) scrollTo({ top, behavior: 'smooth' });
+        scrollToCards();
       }, 500);
     }
 
@@ -604,6 +611,12 @@
       }
     });
 
+    // 痛みカードを画面の上端に合わせる（痛みカード〜おまけのお題が1画面に入るように）
+    function scrollToCards() {
+      const top = el.pain.label.getBoundingClientRect().top + scrollY - 12;
+      if (Math.abs(top - scrollY) > 4) scrollTo({ top, behavior: 'smooth' });
+    }
+
     // ---- おまけのお題 ----
     function nextPrompt() {
       let n = rand(PROMPTS.length);
@@ -617,6 +630,7 @@
       nextPrompt();
       el.prompt.classList.add('is-shown');
       animate(el.prompt, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+      setTimeout(scrollToCards, 320);
     });
     $('promptOther').addEventListener('click', nextPrompt);
 
