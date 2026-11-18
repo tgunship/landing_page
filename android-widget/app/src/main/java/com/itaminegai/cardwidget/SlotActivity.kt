@@ -139,7 +139,6 @@ class SlotActivity : Activity() {
             }
             State.PAIN_SPIN -> {
                 state = State.PAIN_STOPPING
-                message.setText(R.string.slot_pain_stopping)
                 setButton(R.string.slot_stopping, enabled = false)
                 handler.removeCallbacksAndMessages(null)
                 slowDown(CardDeck.Kind.PAIN)
