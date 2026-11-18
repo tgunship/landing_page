@@ -1,15 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 上に痛みカード（白枠）、下に願いカード（白地）を重ねたアイコン -->
+<!-- アプリアイコン：青緑のカード（奥）と白いカード（手前）を重ねた図柄 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="3"
-        android:pathData="M37,32h34a3,3 0 0 1 3,3v14a3,3 0 0 1 -3,3h-34a3,3 0 0 1 -3,-3v-14a3,3 0 0 1 3,-3z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M37,56h34a3,3 0 0 1 3,3v14a3,3 0 0 1 -3,3h-34a3,3 0 0 1 -3,-3v-14a3,3 0 0 1 3,-3z" />
+    <group
+        android:scaleX="0.7"
+        android:scaleY="0.7"
+        android:translateX="21.10"
+        android:translateY="25.65">
+        <group
+            android:pivotX="29.5"
+            android:pivotY="45.5"
+            android:rotation="-10">
+            <path
+                android:fillColor="#12838B"
+                android:pathData="M16.5,18.5H42.5A6,6 0 0 1 48.5,24.5V66.5A6,6 0 0 1 42.5,72.5H16.5A6,6 0 0 1 10.5,66.5V24.5A6,6 0 0 1 16.5,18.5Z" />
+        </group>
+        <group
+            android:pivotX="60"
+            android:pivotY="35.5"
+            android:rotation="5">
+            <path
+                android:fillColor="#FFFFFF"
+                android:strokeColor="#12838B"
+                android:strokeWidth="3.5"
+                android:pathData="M45,10.25H75A5.25,5.25 0 0 1 80.25,15.5V55.5A5.25,5.25 0 0 1 75,60.75H45A5.25,5.25 0 0 1 39.75,55.5V15.5A5.25,5.25 0 0 1 45,10.25Z" />
+        </group>
+    </group>
 </vector>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 毎日20:00ちょうどにカードを切り替えるための正確なアラーム -->
+    <!-- 毎日決まった時刻ちょうどにカードを切り替えるための正確なアラーム -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
@@ -25,6 +25,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".CardListActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
 
         <receiver
             android:name=".CardWidgetProvider"

@@ -12,14 +12,16 @@ import kotlin.random.Random
  *
  * - 54枚をランダムに並べ、1日1枚ずつ順に表示する（54日間は重複なし）
  * - 54枚すべて表示し終えたら、新しくシャッフルして次の1周へ
- * - 1日の区切りは毎日 20:00（20:00 から翌日 19:59 までが同じカード）
+ * - 1日の区切りは毎日決まった時刻（初期値 20:00。アプリで変更可能）
  */
 object CardDeck {
     const val CARD_COUNT = 54
-    val ROLLOVER_TIME: LocalTime = LocalTime.of(20, 0)
+    val DEFAULT_ROLLOVER_TIME: LocalTime = LocalTime.of(20, 0)
 
     private const val PREFS = "card_deck"
     private const val KEY_PERIOD = "period_epoch_day"
+    private const val KEY_HOUR = "rollover_hour"
+    private const val KEY_MINUTE = "rollover_minute"
 
     enum class Kind(val key: String) { PAIN("pain"), WISH("wish") }
 
@@ -27,15 +29,39 @@ object CardDeck {
 
     data class Today(val pain: Position, val wish: Position)
 
-    /** 今の時刻が属する「日」（直近の 20:00 が属する日付）。 */
-    fun currentPeriod(now: ZonedDateTime = ZonedDateTime.now()): LocalDate {
+    /** 設定されている切り替え時刻。 */
+    fun rolloverTime(context: Context): LocalTime {
+        val prefs = prefs(context)
+        return LocalTime.of(
+            prefs.getInt(KEY_HOUR, DEFAULT_ROLLOVER_TIME.hour),
+            prefs.getInt(KEY_MINUTE, DEFAULT_ROLLOVER_TIME.minute),
+        )
+    }
+
+    /**
+     * 切り替え時刻を変更する。今表示しているカードはそのままで、
+     * 新しい時刻が次に来たときに次のカードへ進む。
+     */
+    @Synchronized
+    fun setRolloverTime(context: Context, time: LocalTime) {
+        today(context) // 変更前の時刻で、進めるべき分を先に反映しておく
+        val period = currentPeriod(time).toEpochDay()
+        prefs(context).edit()
+            .putInt(KEY_HOUR, time.hour)
+            .putInt(KEY_MINUTE, time.minute)
+            .putLong(KEY_PERIOD, period)
+            .commit()
+    }
+
+    /** 今の時刻が属する「日」（直近の切り替え時刻が属する日付）。 */
+    fun currentPeriod(time: LocalTime, now: ZonedDateTime = ZonedDateTime.now()): LocalDate {
         val today = now.toLocalDate()
-        return if (now.toLocalTime() >= ROLLOVER_TIME) today else today.minusDays(1)
+        return if (now.toLocalTime() >= time) today else today.minusDays(1)
     }
 
     /** 次にカードが切り替わる時刻。 */
-    fun nextRollover(now: ZonedDateTime = ZonedDateTime.now()): ZonedDateTime {
-        val todayAt = now.with(ROLLOVER_TIME).withSecond(0).withNano(0)
+    fun nextRollover(context: Context, now: ZonedDateTime = ZonedDateTime.now()): ZonedDateTime {
+        val todayAt = now.with(rolloverTime(context)).withSecond(0).withNano(0)
         return if (now.isBefore(todayAt)) todayAt else todayAt.plusDays(1)
     }
 
@@ -43,7 +69,7 @@ object CardDeck {
     @Synchronized
     fun today(context: Context): Today {
         val prefs = prefs(context)
-        val period = currentPeriod().toEpochDay()
+        val period = currentPeriod(rolloverTime(context)).toEpochDay()
         val editor = prefs.edit()
         if (!prefs.contains(KEY_PERIOD)) {
             // 初回：両方の山札をシャッフルして1枚目から
@@ -53,7 +79,7 @@ object CardDeck {
         } else {
             val stored = prefs.getLong(KEY_PERIOD, period)
             if (period > stored) {
-                // 20:00 を過ぎた → 次のカードへ（スマホの電源が切れていた日があっても1枚ずつ進める）
+                // 切り替え時刻を過ぎた → 次のカードへ（スマホの電源が切れていた日があっても1枚ずつ進める）
                 Kind.values().forEach { advance(prefs, editor, it) }
                 editor.putLong(KEY_PERIOD, period)
                 editor.commit()

@@ -4,10 +4,12 @@
 
 ![ウィジェットのイメージ](widget-preview.png)
 
-- 毎日 **20:00** に次のカードへ切り替わります（20:00〜翌19:59 が同じカード）
+- 毎日決まった時刻に次のカードへ切り替わります（初期値 **20:00**。アプリの「毎日の切り替え時刻」で変更できます）
+  - 時刻を変えても今のカードはそのまま。新しい時刻が次に来たときに切り替わります
 - 痛み・願いそれぞれ 54 枚をランダムな順番で並べ、**54 日間は重複なし**。全部出たら新しい順番で次の 1 周へ
   （周の変わり目で同じカードが 2 日続かないようにしています）
 - アプリを開くと今日のカード・次の切り替え時刻・何周目の何日目かを確認できます
+- 「カード一覧を見る」で痛みカード・願いカード各54枚を一覧表示（今日のカードには印がつきます）
 - ウィジェットをタップするとアプリが開きます
 
 ## APK の入手とインストール
@@ -24,9 +26,10 @@
 ## 構成
 
 ```
-app/src/main/java/.../CardDeck.kt          山札（シャッフル・1日1枚・周回）と20:00区切りの管理
+app/src/main/java/.../CardDeck.kt          山札（シャッフル・1日1枚・周回）と切り替え時刻の管理
+app/src/main/java/.../CardListActivity.kt   カード一覧画面
 app/src/main/java/.../CardWidgetProvider.kt ウィジェットの表示
-app/src/main/java/.../RolloverScheduler.kt  毎日20:00のアラーム
+app/src/main/java/.../RolloverScheduler.kt  毎日の切り替え時刻のアラーム
 app/src/main/res/drawable-nodpi/            カード画像 pain_01〜54 / wish_01〜54（番号は元のカード一覧の番号）
 app/src/main/res/values/cards.xml           カード画像とカードの言葉の対応表
 tools/render.py, tools/cards.py             カード画像の生成スクリプト

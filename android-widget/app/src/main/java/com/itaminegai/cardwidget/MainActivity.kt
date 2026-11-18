@@ -1,14 +1,17 @@
 package com.itaminegai.cardwidget
 
 import android.app.Activity
+import android.app.TimePickerDialog
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -17,13 +20,11 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        applySystemBarPadding(findViewById(R.id.scroll))
 
-        // Android 15 以降の全画面表示でステータスバーと重ならないように余白をとる
-        val scroll = findViewById<View>(R.id.scroll)
-        scroll.setOnApplyWindowInsetsListener { v, insets ->
-            @Suppress("DEPRECATION")
-            v.setPadding(0, insets.systemWindowInsetTop, 0, insets.systemWindowInsetBottom)
-            insets
+        findViewById<View>(R.id.time_row).setOnClickListener { pickRolloverTime() }
+        findViewById<Button>(R.id.show_list).setOnClickListener {
+            startActivity(Intent(this, CardListActivity::class.java))
         }
 
         val add = findViewById<Button>(R.id.add_widget)
@@ -39,6 +40,13 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        refresh()
+        // ウィジェット側も同じ状態にそろえておく
+        CardWidgetProvider.updateAll(this)
+        if (CardWidgetProvider.hasWidgets(this)) RolloverScheduler.schedule(this)
+    }
+
+    private fun refresh() {
         val today = CardDeck.today(this)
         val cards = CardResources(this)
 
@@ -51,7 +59,11 @@ class MainActivity : Activity() {
             contentDescription = cards.text(CardDeck.Kind.WISH, today.wish.cardIndex)
         }
 
-        val next = CardDeck.nextRollover()
+        val time = CardDeck.rolloverTime(this).format(TIME_FORMAT)
+        findViewById<TextView>(R.id.rollover_time).text = time
+        findViewById<TextView>(R.id.how_to).text = getString(R.string.how_to, time)
+
+        val next = CardDeck.nextRollover(this)
             .format(DateTimeFormatter.ofPattern("M月d日(E) H:mm", Locale.JAPANESE))
         findViewById<TextView>(R.id.next_change).text = getString(R.string.next_change, next)
         findViewById<TextView>(R.id.progress).text = getString(
@@ -59,9 +71,32 @@ class MainActivity : Activity() {
             today.pain.cycle, today.pain.dayInCycle,
             today.wish.cycle, today.wish.dayInCycle,
         )
+    }
 
-        // ウィジェット側も同じ状態にそろえておく
-        CardWidgetProvider.updateAll(this)
-        if (CardWidgetProvider.hasWidgets(this)) RolloverScheduler.schedule(this)
+    private fun pickRolloverTime() {
+        val current = CardDeck.rolloverTime(this)
+        TimePickerDialog(this, { _, hour, minute ->
+            CardDeck.setRolloverTime(this, LocalTime.of(hour, minute))
+            RolloverScheduler.schedule(this)
+            CardWidgetProvider.updateAll(this)
+            refresh()
+        }, current.hour, current.minute, true).show()
+    }
+
+    companion object {
+        private val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("H:mm")
+    }
+}
+
+/** Android 15 以降の全画面表示でステータスバー・ナビゲーションバーと重ならないように余白をとる。 */
+fun applySystemBarPadding(view: View) {
+    val left = view.paddingLeft
+    val top = view.paddingTop
+    val right = view.paddingRight
+    val bottom = view.paddingBottom
+    view.setOnApplyWindowInsetsListener { v, insets ->
+        @Suppress("DEPRECATION")
+        v.setPadding(left, top + insets.systemWindowInsetTop, right, bottom + insets.systemWindowInsetBottom)
+        insets
     }
 }
