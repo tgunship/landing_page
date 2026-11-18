@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">痛みと願いカード</string>
+    <string name="widget_name">今日の痛みと願い</string>
+    <string name="widget_description">痛みカードと願いカードを1枚ずつ、毎日20:00に日替わりで表示します</string>
+    <string name="today_title">今日のカード</string>
+    <string name="label_pain">痛みカード</string>
+    <string name="label_wish">願いカード</string>
+    <string name="add_widget">ホーム画面にウィジェットを追加</string>
+    <string name="how_to">ホーム画面の何もないところを長押し →「ウィジェット」→「痛みと願いカード」を選び、2×2 のウィジェットを配置してください。\n\nカードは毎日 20:00 に切り替わります。54枚すべてが重複なく1回ずつ表示されると、新しい順番で次の1周が始まります。</string>
+    <string name="next_change">次の切り替え：%1$s</string>
+    <string name="progress">痛み %1$d周目 %2$d/54　・　願い %3$d周目 %4$d/54</string>
+</resources>
