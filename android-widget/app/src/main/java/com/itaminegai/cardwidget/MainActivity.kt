@@ -30,6 +30,9 @@ class MainActivity : Activity() {
             CardWidgetProvider.updateAll(this)
             refresh()
         }
+        findViewById<Button>(R.id.open_slot).setOnClickListener {
+            startActivity(Intent(this, SlotActivity::class.java))
+        }
         findViewById<Button>(R.id.show_list).setOnClickListener {
             startActivity(Intent(this, CardListActivity::class.java))
         }

@@ -31,6 +31,12 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <activity
+            android:name=".SlotActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="portrait" />
+
         <receiver
             android:name=".CardWidgetProvider"
             android:exported="true"

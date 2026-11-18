@@ -21,4 +21,17 @@
     <string name="reset_confirm_ok">リセットする</string>
     <string name="reset_confirm_cancel">キャンセル</string>
     <string name="advance">次のカードへ切り替える</string>
+    <string name="open_slot">カード占い（あそび）</string>
+    <string name="slot_title">カード占い</string>
+    <string name="slot_start">スタート</string>
+    <string name="slot_stop">ストップ！</string>
+    <string name="slot_stopping">……</string>
+    <string name="slot_again">もう一度</string>
+    <string name="slot_intro">ボタンを押すと、カードが回りはじめます。\nいまの自分に響くタイミングで止めてみてください。</string>
+    <string name="slot_pain_spinning">あなたの痛みは……</string>
+    <string name="slot_pain_stopping">止まるかな……？</string>
+    <string name="slot_wish_spinning">「%1$s」\nその奥にある願いは……</string>
+    <string name="slot_result">痛み「%1$s」の奥には、\n願い「%2$s」が隠れているのかもしれません。</string>
+    <string name="sound_on">♪ 音あり</string>
+    <string name="sound_off">音なし</string>
 </resources>
