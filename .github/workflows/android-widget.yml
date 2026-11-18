@@ -20,11 +20,20 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          # このブランチのビルドでも依存ライブラリをキャッシュに保存する
+          cache-read-only: false
       # ubuntu-latest には Android SDK がプリインストール済み（ANDROID_HOME）
       - name: Build APK
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease
+          # 依存ライブラリのダウンロードが一時的に失敗（429 など）しても、最大3回まで再試行する
+          for i in 1 2 3; do
+            ./gradlew --no-daemon assembleRelease && break
+            if [ "$i" = 3 ]; then exit 1; fi
+            echo "Build failed (attempt $i). Retrying in 60s..."
+            sleep 60
+          done
           cp app/build/outputs/apk/release/app-release.apk itami-negai-widget.apk
       - uses: actions/upload-artifact@v4
         with:
