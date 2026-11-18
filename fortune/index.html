@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>カード占い｜痛みと願いカード</title>
+  <meta name="description" content="痛みカードと願いカードを、スロットのように1枚ずつ引くカード占い。いまの自分に響くタイミングで止めてみてください。">
+  <meta name="theme-color" content="#12838b">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="カード占い｜痛みと願いカード">
+  <meta property="og:description" content="痛みカードと願いカードを、スロットのように1枚ずつ引くカード占い。">
+  <meta property="og:image" content="https://tgunship.github.io/landing_page/images/ogp.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --teal: #12838b;
+      --teal-dark: #0d6970;
+      --teal-deep: #0a4a4f;
+      --teal-soft: #e7f3f4;
+      --teal-disabled: #9cc8cc;
+      --ink: #2f3a3b;
+      --sub: #6f8183;
+      --line: #dcebec;
+      --screen: #f6efe6;
+      --paper: #ffffff;
+      --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+      --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; min-height: 100vh; min-height: 100dvh;
+      font-family: var(--sans); color: var(--ink); background: var(--screen);
+      -webkit-tap-highlight-color: transparent;
+    }
+    button { font: inherit; cursor: pointer; }
+    .app {
+      max-width: 520px; margin: 0 auto;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+    }
+
+    /* ヘッダー */
+    .head { display: flex; align-items: center; gap: 10px; }
+    .head__mark { width: 40px; height: 33px; flex: none; }
+    .head__title { flex: 1; margin: 0; line-height: 1.25; }
+    .head__deck { display: block; font-size: .72rem; font-weight: 700; color: var(--sub); letter-spacing: .08em; }
+    .head__deck sup { font-size: .6em; margin-left: 1px; }
+    .head__name { display: block; font-family: var(--serif); font-weight: 600; font-size: 1.4rem; color: var(--teal-deep); letter-spacing: .08em; }
+    .sound {
+      flex: none; height: 36px; padding: 0 14px; border-radius: 18px;
+      border: 1px solid var(--line); background: var(--paper); color: var(--sub); font-size: .82rem;
+    }
+    .sound[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+    /* メッセージ */
+    .message {
+      margin: 18px 0 0; min-height: 3.1em; text-align: center; white-space: pre-line;
+      font-size: 1rem; line-height: 1.6; color: var(--ink);
+    }
+
+    /* カード */
+    .panel {
+      margin-top: 14px; padding: 16px; border-radius: 20px; background: var(--paper);
+      box-shadow: 0 8px 26px rgba(10, 74, 79, .09);
+    }
+    .label { margin: 0 0 6px; font-size: .78rem; font-weight: 700; color: var(--sub); letter-spacing: .06em; transition: color .3s; }
+    .label.is-on { color: var(--teal); }
+    .label + .card { margin-bottom: 14px; }
+    .card { position: relative; perspective: 1400px; }
+    .card:last-child { margin-bottom: 0; }
+    .card__inner { position: relative; transform-style: preserve-3d; }
+    .card img {
+      display: block; width: 100%; height: auto; aspect-ratio: 960 / 624;
+      filter: drop-shadow(0 3px 6px rgba(10, 74, 79, .14));
+      user-select: none; -webkit-user-drag: none;
+    }
+    .card__shine {
+      position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none;
+      border-radius: 3.8% / 5.8%;
+    }
+
+    /* 結果の問い・おまけのお題 */
+    .question { display: none; }
+    .question.is-shown, .actions.is-shown { display: block; }
+    .question__text {
+      margin: 24px 0 0; text-align: center; white-space: pre-line;
+      font-family: var(--serif); font-weight: 600; font-size: 1.12rem; line-height: 1.8; color: var(--teal-dark);
+    }
+    .prompt-open {
+      display: block; margin: 16px auto 0; height: 44px; padding: 0 18px; border-radius: 22px;
+      border: 1px solid var(--line); background: var(--paper); color: var(--teal); font-size: .9rem;
+    }
+    .prompt-open[hidden] { display: none; }
+    .prompt {
+      display: none; margin-top: 12px; padding: 14px 18px 10px; border-radius: 16px; background: var(--teal-soft);
+    }
+    .prompt.is-shown { display: block; }
+    .prompt__chip {
+      display: inline-block; padding: 2px 10px; border-radius: 12px; background: #fff;
+      color: var(--teal); font-size: .7rem; font-weight: 700;
+    }
+    .prompt__hint { margin: 4px 0 0; color: var(--sub); font-size: .72rem; }
+    .prompt__text { margin: 8px 0 0; font-size: .95rem; line-height: 1.75; }
+    .prompt__other {
+      display: block; margin: 6px 0 0 auto; height: 36px; padding: 0 12px; border-radius: 18px;
+      border: 1px solid var(--line); background: var(--paper); color: var(--teal); font-size: .78rem; font-weight: 700;
+    }
+
+    /* ボタン */
+    .main-btn {
+      display: block; width: 100%; height: 60px; margin-top: 22px; border: 0; border-radius: 32px;
+      background: var(--teal); color: #fff; font-size: 1.15rem; font-weight: 700; letter-spacing: .12em;
+      box-shadow: 0 6px 18px rgba(18, 131, 139, .28); transition: background .2s, box-shadow .2s, transform .1s;
+    }
+    .main-btn:active:not(:disabled) { transform: scale(.98); }
+    .main-btn:disabled { background: var(--teal-disabled); box-shadow: none; cursor: default; }
+    .actions { display: none; }
+    .actions__row { display: flex; gap: 12px; margin-top: 16px; }
+    .out-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 50px;
+      border: 1.5px solid var(--teal); border-radius: 26px; background: var(--paper);
+      color: var(--teal); font-size: .92rem; font-weight: 700;
+    }
+    .out-btn svg { width: 20px; height: 20px; }
+    :focus-visible { outline: 3px solid rgba(18, 131, 139, .45); outline-offset: 2px; }
+
+    .foot { margin-top: 36px; text-align: center; font-size: .76rem; color: var(--sub); line-height: 1.9; }
+    .foot a { color: var(--teal); }
+
+    .toast {
+      position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 20;
+      max-width: calc(100% - 32px); padding: 10px 18px; border-radius: 22px;
+      background: rgba(47, 58, 59, .92); color: #fff; font-size: .85rem; line-height: 1.5;
+      transform: translate(-50%, 20px); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+    }
+    .toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
+    .confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="head">
+      <svg class="head__mark" viewBox="0 0 100 83" aria-hidden="true">
+        <path transform="rotate(-10 29.5 45.5)" fill="#12838b" d="M16.5,18.5H42.5A6,6 0 0 1 48.5,24.5V66.5A6,6 0 0 1 42.5,72.5H16.5A6,6 0 0 1 10.5,66.5V24.5A6,6 0 0 1 16.5,18.5Z"/>
+        <path transform="rotate(5 60 35.5)" fill="#fff" stroke="#12838b" stroke-width="3.5" d="M45,10.25H75A5.25,5.25 0 0 1 80.25,15.5V55.5A5.25,5.25 0 0 1 75,60.75H45A5.25,5.25 0 0 1 39.75,55.5V15.5A5.25,5.25 0 0 1 45,10.25Z"/>
+      </svg>
+      <h1 class="head__title">
+        <span class="head__deck">痛みと願いカード<sup aria-label="トレードマーク">TM</sup></span>
+        <span class="head__name">カード占い</span>
+      </h1>
+      <button class="sound" id="sound" type="button" aria-pressed="true">♪ 音あり</button>
+    </header>
+
+    <p class="message" id="message" aria-live="polite"></p>
+
+    <section class="panel" aria-label="カード">
+      <p class="label" id="painLabel">痛みカード</p>
+      <div class="card"><div class="card__inner" id="painCard">
+        <img id="painImg" src="cards/back_pain.webp" alt="痛みカード（裏向き）" width="960" height="624">
+        <span class="card__shine"></span>
+      </div></div>
+      <p class="label" id="wishLabel">願いカード</p>
+      <div class="card"><div class="card__inner" id="wishCard">
+        <img id="wishImg" src="cards/back_wish.webp" alt="願いカード（裏向き）" width="960" height="624">
+        <span class="card__shine"></span>
+      </div></div>
+    </section>
+
+    <section class="question" id="question">
+      <p class="question__text" id="questionText">この「痛み」と「願い」を感じると、
+今のあなたの中には何がありますか。</p>
+      <button class="prompt-open" id="promptOpen" type="button">＋ おまけのお題をひく</button>
+      <div class="prompt" id="prompt">
+        <span class="prompt__chip">おまけのお題</span>
+        <p class="prompt__hint">もう少し深めてみたいときのヒントです</p>
+        <p class="prompt__text" id="promptText" aria-live="polite"></p>
+        <button class="prompt__other" id="promptOther" type="button">別のお題</button>
+      </div>
+    </section>
+
+    <button class="main-btn" id="mainBtn" type="button" disabled>準備中…</button>
+
+    <section class="actions" id="actions">
+      <div class="actions__row">
+        <button class="out-btn" id="saveBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          画像を保存
+        </button>
+        <button class="out-btn" id="shareBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/></svg>
+          共有する
+        </button>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <a href="../">痛みと願いカード セッションについて</a><br>
+      ©2026 Uchida Takeshi
+    </footer>
+  </main>
+
+  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    // ---- カードの言葉（番号順。画像 cards/pain_01〜54・wish_01〜54 と対応） ----
+    const PAIN = ['失敗','暴走','妥協','依存','誤解','平凡','裏切り','絶望','無力','自己崩壊','自分への嘘','嫉妬される','価値が無い','愛されない','存在の否定','空っぽ','惨め','枯渇\n消耗','未達成\n敗北','停滞\n閉塞','老い\n衰え','異常\n異物','無責任\n不誠実','対立\n不調和','不公平\n理不尽','忘却\n埋没','無関心\n放置','嫌われる\n迷惑','コントロール不可\n予測不能','つまらない人間\nつまらない人生','搾取される\n利用される','批判\n否定\n認められない','孤独\n孤立\n隔絶','できない\n不十分\n未熟','欠陥\nポンコツ\n劣等','人を傷つける\n不快にする','制限される\n支配される','本性の露呈\n偽装の露呈','責められる\n攻撃される','見下される\n軽く見られる','わかられない\n受け取られない','排除される\n拒絶される','頼れない\n助けてくれない','見捨てられる\n見切られる','ゆるされない\n原罪感','キャパオーバー','粗末に扱われる','踏み込まれる','存在意義の喪失','居場所の喪失','期待外れ\nガッカリ','無駄\n報われない','魅力が無い\n醜い','不要\n役割の喪失'];
+    const WISH = ['共感','信頼','受容','理解','愛','尊重','思いやり','親密さ','つながり','スペース','関心','自発性','自己表現','創造性','貢献','成長','明確さ','美','安心','秩序','尊厳','ふれあい','祝福','希望','仲間','ゆるし','承認','境界線','無防備さ','健やか','わかち合い','自律\n自立','支え\n協力','循環\n相互性','自由\n選択','言行一致\n誠実さ','意味\n目的','効力感\n達成','探求\n発見','嘆き\n悼み','公平\n対等','平和\n調和','流れ\nフロー','休息\n癒し','喜び\n楽しみ','挑戦\n刺激','遊び\n気軽さ','共鳴\n一体感','自分に\n本物であること','安らげる居場所','インスピレーション\n直感','(ニーズを満たす)\n力','ただ在ること','活力\nいのちの躍動'];
+
+    // おまけのお題（1行＝1つ。書き換え・追加・削除できます）
+    const PROMPTS = [
+      'この願いが満たされたとき、体はどんな感じがしそうですか？',
+      'この痛みは、あなたが何を大切にしているから感じるのでしょう？',
+      'この痛みが、あなたに伝えたがっていることは何でしょう？',
+      'この痛みと願い、今はどちらの声が大きいですか？',
+      'このカードの組み合わせは、今のあなたに何を伝えにきたのでしょう？',
+      'この痛みに名前やキャラクターをつけるとしたら？',
+      '最近、この痛みに触れたのはどんな場面でしたか？',
+      'この願いが満たされていた瞬間を、ひとつ思い出してみてください。',
+      'この痛みから自分を守るために、これまでどんな工夫をしてきましたか？',
+      '今日、この願いを少し満たしてくれた小さな出来事はありましたか？',
+      'この願いを大切にしている自分に、どんな言葉をかけたいですか？',
+      'この痛みを感じてきた自分を、ねぎらうとしたら？',
+      '大切な人がこの痛みを抱えていたら、何と声をかけますか？',
+      'この願いが満たされたら、今日のあなたは何をしていますか？',
+      '今夜眠る前に、この願いのためにできることは？',
+      'この願いを、ひとことの合言葉にするとしたら？',
+      'この願いを、誰と一緒に満たしたいですか？',
+      'この願いを満たすために、誰かにお願いできることはありますか？',
+      '苦手なあの人も同じ願いを持っているとしたら、何が見えてきますか？',
+      'この願いが叶った1年後の自分から、今の自分へひとこと。',
+    ];
+
+    const TEXT = {
+      intro: 'ボタンを押すと、カードが回りはじめます。\nいまの自分に響くタイミングで止めてみてください。',
+      painSpinning: '今日の痛みは……',
+      painStopping: '止まるかな……？',
+      wishSpinning: p => `「${p}」\n今日の願いは……`,
+      done: (p, w) => `今日の痛み「${p}」\n今日の願い「${w}」`,
+      result: 'この「痛み」と「願い」を感じると、\n今のあなたの中には何がありますか。',
+    };
+
+    const N = 54;
+    const SPIN_MS = 75;
+    const KINDS = { pain: { names: PAIN, label: '痛みカード' }, wish: { names: WISH, label: '願いカード' } };
+    const src = (kind, i) => `cards/${kind}_${String(i + 1).padStart(2, '0')}.webp`;
+    const backSrc = kind => `cards/back_${kind}.webp`;
+    // 1行の名前に（「批判\n否定」→「批判・否定」、「(ニーズを満たす)\n力」→「(ニーズを満たす)力」）
+    const oneLine = s => s.replace(/\)\n/g, ')').replace(/\n/g, '・');
+    const rand = n => Math.floor(Math.random() * n);
+
+    const $ = id => document.getElementById(id);
+    const el = {
+      message: $('message'), btn: $('mainBtn'), sound: $('sound'),
+      pain: { img: $('painImg'), box: $('painCard'), label: $('painLabel') },
+      wish: { img: $('wishImg'), box: $('wishCard'), label: $('wishLabel') },
+      question: $('question'), actions: $('actions'),
+      promptOpen: $('promptOpen'), prompt: $('prompt'), promptText: $('promptText'),
+      toast: $('toast'), confetti: $('confetti'),
+    };
+
+    // ---- 保存（使えないブラウザでも動くように） ----
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 保存できなくても遊べる */ } },
+    };
+
+    // ---- 効果音（音声ファイルを使わず、その場で波形を合成） ----
+    const Sound = (() => {
+      let ctx = null, buffers = null;
+      let enabled = store.get('fortune.sound') !== 'off';
+      const blip = (t, f, decay) => {
+        const s = Math.sin(2 * Math.PI * f * t);
+        return (0.55 * (s >= 0 ? 1 : -1) + 0.45 * s) * Math.exp(-t * decay);
+      };
+      const bell = (t, f, decay) =>
+        (Math.sin(2 * Math.PI * f * t) + 0.35 * Math.sin(2 * Math.PI * f * 2 * t)) * Math.exp(-t * decay);
+      function synth(seconds, wave) {
+        const rate = ctx.sampleRate, n = Math.floor(seconds * rate);
+        const buf = ctx.createBuffer(1, n, rate), d = buf.getChannelData(0);
+        let peak = 1e-6;
+        for (let i = 0; i < n; i++) { d[i] = wave(i / rate); peak = Math.max(peak, Math.abs(d[i])); }
+        const gain = 0.8 / peak, attack = Math.floor(0.003 * rate);
+        for (let i = 0; i < n; i++) {
+          const fi = i < attack ? i / attack : 1, fo = i > n - attack ? (n - i) / attack : 1;
+          d[i] *= gain * fi * fo;
+        }
+        return buf;
+      }
+      function init() {
+        if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        try { ctx = new AC(); } catch (e) { return; }
+        buffers = {
+          tick: synth(0.045, t => blip(t, 1760, 55)),
+          lock: synth(0.42, t => t < 0.07 ? blip(t, 1318.5, 18) : blip(t - 0.07, 1975.5, 7)),
+          finale: synth(1.6, t => {
+            const notes = [1046.5, 1318.5, 1568, 2093];
+            let v = 0;
+            notes.forEach((f, i) => {
+              const st = i * 0.09;
+              if (t >= st) v += 0.32 * bell(t - st, f, i === notes.length - 1 ? 2.2 : 5);
+            });
+            if (t >= 0.42) {
+              const u = t - 0.42;
+              v += 0.22 * bell(u, 2093, 2.4) + 0.18 * bell(u, 2637, 2.6) + 0.16 * bell(u, 3136, 2.8);
+              v += 0.10 * Math.sin(2 * Math.PI * 4186 * u) * Math.exp(-u * 3.5) * (0.5 + 0.5 * Math.sin(2 * Math.PI * 18 * u));
+            }
+            return v;
+          }),
+        };
+      }
+      function play(name) {
+        if (!enabled || !ctx || !buffers) return;
+        try {
+          const s = ctx.createBufferSource();
+          s.buffer = buffers[name];
+          s.connect(ctx.destination);
+          s.start();
+        } catch (e) { /* 音が出せなくても遊びは続けられる */ }
+      }
+      return {
+        init, play,
+        get enabled() { return enabled; },
+        set enabled(v) { enabled = v; store.set('fortune.sound', v ? 'on' : 'off'); if (v) init(); },
+      };
+    })();
+
+    function updateSoundBtn() {
+      el.sound.textContent = Sound.enabled ? '♪ 音あり' : '音なし';
+      el.sound.setAttribute('aria-pressed', String(Sound.enabled));
+    }
+    el.sound.addEventListener('click', () => { Sound.enabled = !Sound.enabled; updateSoundBtn(); });
+    updateSoundBtn();
+
+    const vibrate = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* 非対応 */ } };
+
+    // ---- 画像の先読み ----
+    const images = {};
+    function preload() {
+      const list = [backSrc('pain'), backSrc('wish')];
+      for (let i = 0; i < N; i++) list.push(src('pain', i), src('wish', i));
+      return Promise.all(list.map(s => new Promise(res => {
+        const im = new Image();
+        im.onload = im.onerror = () => res();
+        im.src = s;
+        images[s] = im;
+        if (im.decode) im.decode().then(res, res);
+      })));
+    }
+
+    // ---- アニメーション ----
+    const animate = (node, frames, opts) =>
+      node.animate ? node.animate(frames, opts).finished.catch(() => {}) : Promise.resolve();
+
+    function setCard(kind, s, alt) {
+      const img = el[kind].img;
+      img.src = s;
+      img.alt = alt;
+    }
+    async function flip(kind, s, alt) {
+      const box = el[kind].box;
+      await animate(box, [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(90deg)' }], { duration: 160, easing: 'ease-in' });
+      setCard(kind, s, alt);
+      await animate(box, [{ transform: 'rotateY(-90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 160, easing: 'ease-out' });
+    }
+    function pop(kind, big, delay = 0) {
+      const box = el[kind].box;
+      animate(box, [
+        { transform: 'scale(1)', easing: 'ease-out' },
+        { transform: `scale(${big})`, offset: 0.24, easing: 'cubic-bezier(.34,2.2,.64,1)' },
+        { transform: 'scale(1)' },
+      ], { duration: 500 + (big > 1.1 ? 180 : 0), delay });
+    }
+    function shine(kind) {
+      animate(el[kind].box.querySelector('.card__shine'),
+        [{ opacity: 0 }, { opacity: 0.75 }, { opacity: 0 }, { opacity: 0.45 }, { opacity: 0 }], { duration: 900 });
+    }
+
+    // ---- 紙吹雪 ----
+    const Confetti = (() => {
+      const cv = el.confetti, c2d = cv.getContext('2d');
+      const colors = ['#12838b', '#5cb8be', '#e8b84a', '#f2a7a0', '#ffffff', '#9ad3c2'];
+      let raf = 0;
+      function burst() {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        cancelAnimationFrame(raf);
+        const dpr = window.devicePixelRatio || 1, w = innerWidth, h = innerHeight;
+        cv.width = w * dpr; cv.height = h * dpr;
+        c2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const pieces = Array.from({ length: 110 }, () => ({
+          x: Math.random() * w, y: -Math.random() * h * 0.5 - 20,
+          vx: (Math.random() - 0.5) * 120, vy: 260 + Math.random() * 340,
+          a: Math.random() * 360, spin: (Math.random() - 0.5) * 720,
+          w: 5 + Math.random() * 6, h: 8 + Math.random() * 8,
+          color: colors[rand(colors.length)],
+        }));
+        const DURATION = 2600, start = performance.now();
+        let last = start;
+        const frame = now => {
+          const dt = (now - last) / 1000, p = (now - start) / DURATION;
+          last = now;
+          c2d.clearRect(0, 0, w, h);
+          if (p >= 1) return;
+          c2d.globalAlpha = p < 0.7 ? 1 : (1 - p) / 0.3;
+          for (const q of pieces) {
+            q.x += q.vx * dt; q.y += q.vy * dt; q.a += q.spin * dt;
+            c2d.save();
+            c2d.translate(q.x, q.y);
+            c2d.rotate(q.a * Math.PI / 180);
+            c2d.fillStyle = q.color;
+            c2d.fillRect(-q.w / 2, -q.h / 2, q.w, q.h);
+            c2d.restore();
+          }
+          raf = requestAnimationFrame(frame);
+        };
+        raf = requestAnimationFrame(frame);
+      }
+      return { burst };
+    })();
+
+    // ---- カード占い本体 ----
+    // READY → PAIN_SPIN → PAIN_STOPPING → WISH_SPIN → WISH_STOPPING → DONE
+    let state = 'LOADING';
+    const index = { pain: -1, wish: -1 };
+    let timer = 0;
+    let promptIndex = -1;
+
+    const later = (fn, ms) => { timer = setTimeout(fn, ms); };
+    const clearTimer = () => { clearTimeout(timer); timer = 0; };
+
+    function setButton(text, enabled) {
+      el.btn.textContent = text;
+      el.btn.disabled = !enabled;
+    }
+    function setMessage(text, fade) {
+      el.message.textContent = text;
+      if (fade) animate(el.message, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+    }
+
+    function showReady() {
+      state = 'READY';
+      index.pain = index.wish = -1;
+      setCard('pain', backSrc('pain'), '痛みカード（裏向き）');
+      setCard('wish', backSrc('wish'), '願いカード（裏向き）');
+      el.pain.label.classList.remove('is-on');
+      el.wish.label.classList.remove('is-on');
+      setMessage(TEXT.intro);
+      setButton('スタート', true);
+    }
+
+    /** 次のカードを表示（同じカードが続かないように）。 */
+    function step(kind, haptic) {
+      const cur = index[kind];
+      let next = rand(N - 1);
+      if (cur >= 0 && next >= cur) next++;
+      index[kind] = next;
+      setCard(kind, src(kind, next), oneLine(KINDS[kind].names[next]));
+      // スロットのリールのように、上から少し落ちてくる動き
+      animate(el[kind].box, [{ transform: 'translateY(-6%)' }, { transform: 'translateY(0)' }], { duration: 60, easing: 'ease-out' });
+      Sound.play('tick');
+      if (haptic) vibrate(8);
+    }
+
+    /** ピコピコと高速で入れ替える。 */
+    function spin(kind) {
+      clearTimer();
+      const tick = () => { step(kind, false); later(tick, SPIN_MS); };
+      tick();
+    }
+
+    /** だんだんゆっくりになって止まる。ときどき「止まった…？」と思わせて、もう1枚だけ進む（じらし）。 */
+    function slowDown(kind) {
+      const steps = 7 + rand(5);
+      const tease = Math.random() < 0.35;
+      let k = 0;
+      const next = () => {
+        k++;
+        step(kind, true);
+        if (k < steps) later(next, SPIN_MS + 560 * Math.pow(k / steps, 2.2));
+        else if (tease && k === steps) later(next, 1000);
+        else later(() => lock(kind, true), 250);
+      };
+      later(next, SPIN_MS);
+    }
+
+    /** 1枚に定まったときの演出と、次の段階への移行。 */
+    function lock(kind, anim) {
+      clearTimer();
+      el[kind].label.classList.add('is-on');
+      if (anim) { vibrate(30); Sound.play('lock'); pop(kind, 1.08); }
+
+      if (kind === 'pain') {
+        state = 'WISH_SPIN';
+        setMessage(TEXT.wishSpinning(oneLine(PAIN[index.pain])));
+        setButton('ストップ！', false);
+        index.wish = rand(N);
+        const first = src('wish', index.wish), alt = oneLine(WISH[index.wish]);
+        if (anim) {
+          // ひと呼吸おいてから願いカードがめくれて回りはじめる
+          later(async () => {
+            await flip('wish', first, alt);
+            if (state !== 'WISH_SPIN') return;
+            setButton('ストップ！', true);
+            if (!document.hidden) spin('wish');
+          }, 900);
+        } else {
+          // 画面を離れたときは表だけ出しておき、戻ったら回しはじめる
+          setCard('wish', first, alt);
+          setButton('ストップ！', true);
+        }
+      } else {
+        state = 'DONE';
+        setButton('もう一度', false);
+        if (anim) later(celebrate, 420);
+        else showResult();
+      }
+    }
+
+    /** 2枚そろったときの演出：ファンファーレ、2枚そろって弾む＋光る、紙吹雪。 */
+    function celebrate() {
+      Sound.play('finale');
+      vibrate([30, 60, 30]);
+      pop('pain', 1.12, 0); pop('wish', 1.12, 60);
+      shine('pain'); shine('wish');
+      Confetti.burst();
+      later(showResult, 700);
+    }
+
+    function showResult() {
+      // 上のメッセージには今日の2枚の名前。本来の問いはカードの下に出す
+      setMessage(TEXT.done(oneLine(PAIN[index.pain]), oneLine(WISH[index.wish])), true);
+      promptIndex = -1;
+      el.prompt.classList.remove('is-shown');
+      el.promptOpen.hidden = false;
+      for (const s of [el.question, el.actions]) {
+        s.classList.add('is-shown');
+        animate(s, [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }], { duration: 450, easing: 'ease-out' });
+      }
+      setButton('もう一度', true);
+      setTimeout(() => {
+        const top = el.question.getBoundingClientRect().top + scrollY - el.message.offsetHeight - 40;
+        if (top > scrollY) scrollTo({ top, behavior: 'smooth' });
+      }, 500);
+    }
+
+    async function restart() {
+      setButton('スタート', false);
+      await Promise.all([el.question, el.actions].map(s =>
+        animate(s, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 }).then(() => s.classList.remove('is-shown'))));
+      flip('pain', backSrc('pain'), '痛みカード（裏向き）');
+      await new Promise(r => setTimeout(r, 150));
+      await flip('wish', backSrc('wish'), '願いカード（裏向き）');
+      showReady();
+    }
+
+    el.btn.addEventListener('click', async () => {
+      Sound.init();
+      switch (state) {
+        case 'READY':
+          state = 'PAIN_SPIN';
+          setMessage(TEXT.painSpinning);
+          setButton('ストップ！', false);
+          index.pain = rand(N);
+          await flip('pain', src('pain', index.pain), oneLine(PAIN[index.pain]));
+          if (state !== 'PAIN_SPIN') return;
+          setButton('ストップ！', true);
+          spin('pain');
+          break;
+        case 'PAIN_SPIN':
+          state = 'PAIN_STOPPING';
+          setMessage(TEXT.painStopping);
+          setButton('……', false);
+          clearTimer();
+          slowDown('pain');
+          break;
+        case 'WISH_SPIN':
+          state = 'WISH_STOPPING';
+          setButton('……', false);
+          clearTimer();
+          slowDown('wish');
+          break;
+        case 'DONE':
+          restart();
+          break;
+      }
+    });
+
+    // 画面を離れたら回転を止め、止まりかけならその場で止める。戻ったら回転を再開
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        clearTimer();
+        if (state === 'PAIN_STOPPING') lock('pain', false);
+        else if (state === 'WISH_STOPPING') lock('wish', false);
+      } else if ((state === 'PAIN_SPIN' || state === 'WISH_SPIN') && !el.btn.disabled) {
+        spin(state === 'PAIN_SPIN' ? 'pain' : 'wish');
+      }
+    });
+
+    // ---- おまけのお題 ----
+    function nextPrompt() {
+      let n = rand(PROMPTS.length);
+      if (PROMPTS.length > 1 && n === promptIndex) n = (n + 1) % PROMPTS.length;
+      promptIndex = n;
+      el.promptText.textContent = PROMPTS[n];
+      animate(el.promptText, [{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
+    }
+    el.promptOpen.addEventListener('click', () => {
+      el.promptOpen.hidden = true;
+      nextPrompt();
+      el.prompt.classList.add('is-shown');
+      animate(el.prompt, [{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+    });
+    $('promptOther').addEventListener('click', nextPrompt);
+
+    // ---- 結果画像（保存・共有） ----
+    function wrap(ctx, text, maxW) {
+      const lines = [];
+      for (const para of text.split('\n')) {
+        let line = '';
+        for (const ch of para) {
+          if (ctx.measureText(line + ch).width > maxW && line) {
+            // 句読点・閉じかっこは行頭に来ないように前の行へ
+            if ('、。，．」）！？ー…'.includes(ch)) { line += ch; continue; }
+            lines.push(line); line = ch;
+          } else line += ch;
+        }
+        lines.push(line);
+      }
+      return lines;
+    }
+
+    async function renderResult() {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      const W = 1080, PAD = 72, cardW = W - PAD * 2, cardH = Math.round(cardW * 624 / 960);
+      const C = { teal: '#12838b', tealDark: '#0d6970', tealSoft: '#e7f3f4', ink: '#2f3a3b', sub: '#6f8183', screen: '#f6efe6' };
+      const SANS = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif';
+      const SERIF = '"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif';
+      const font = (size, weight = 400, fam = SANS) => `${weight} ${size}px ${fam}`;
+
+      const meas = document.createElement('canvas').getContext('2d');
+      meas.font = font(44, 600, SERIF);
+      const resultLines = wrap(meas, TEXT.result, cardW);
+      const resultLH = 44 * 1.6;
+      const showPrompt = el.prompt.classList.contains('is-shown') && promptIndex >= 0;
+      meas.font = font(34);
+      const promptLines = showPrompt ? wrap(meas, PROMPTS[promptIndex], cardW - 80) : [];
+      const promptLH = 34 * 1.6;
+      const promptBoxH = showPrompt ? 60 + 40 + promptLines.length * promptLH + 36 : 0;
+
+      const headerH = 230, labelH = 64;
+      const H = headerH + (labelH + cardH + 40) * 2 + resultLines.length * resultLH + 60 + (showPrompt ? promptBoxH + 20 : 0) + 170;
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = Math.ceil(H);
+      const c = cv.getContext('2d');
+      c.fillStyle = C.screen; c.fillRect(0, 0, W, H);
+      c.textBaseline = 'alphabetic';
+
+      // ヘッダー：カードのイラスト＋タイトル＋TM＋日付
+      let y = 80;
+      const markH = 76, markW = markH * 100 / 83;
+      c.save();
+      c.translate(PAD, y - 8); c.scale(markW / 100, markH / 83);
+      const back = new Path2D('M16.5,18.5H42.5A6,6 0 0 1 48.5,24.5V66.5A6,6 0 0 1 42.5,72.5H16.5A6,6 0 0 1 10.5,66.5V24.5A6,6 0 0 1 16.5,18.5Z');
+      const front = new Path2D('M45,10.25H75A5.25,5.25 0 0 1 80.25,15.5V55.5A5.25,5.25 0 0 1 75,60.75H45A5.25,5.25 0 0 1 39.75,55.5V15.5A5.25,5.25 0 0 1 45,10.25Z');
+      const rot = (cx, cy, deg, draw) => { c.save(); c.translate(cx, cy); c.rotate(deg * Math.PI / 180); c.translate(-cx, -cy); draw(); c.restore(); };
+      rot(29.5, 45.5, -10, () => { c.fillStyle = C.teal; c.fill(back); });
+      rot(60, 35.5, 5, () => { c.fillStyle = '#fff'; c.fill(front); c.strokeStyle = C.teal; c.lineWidth = 3.5; c.stroke(front); });
+      c.restore();
+      const titleX = PAD + markW + 18;
+      const TITLE = '痛みと願いカード';
+      c.fillStyle = C.teal; c.font = font(56, 700);
+      c.fillText(TITLE, titleX, y + 50);
+      const tw = c.measureText(TITLE).width;
+      c.font = font(22, 700); c.fillText('TM', titleX + tw + 4, y + 14);
+      const d = new Date();
+      const wd = '日月火水木金土'[d.getDay()];
+      c.fillStyle = C.sub; c.font = font(30);
+      c.fillText(`${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${wd})　カード占い`, titleX, y + 98);
+      y = headerH;
+
+      const drawCard = (label, s) => {
+        c.fillStyle = C.sub; c.font = font(34, 700);
+        c.fillText(label, PAD, y + 40);
+        y += labelH;
+        c.save();
+        c.shadowColor = 'rgba(10,74,79,.16)'; c.shadowBlur = 18; c.shadowOffsetY = 8;
+        c.drawImage(images[s], PAD, y, cardW, cardH);
+        c.restore();
+        y += cardH + 40;
+      };
+      drawCard('痛みカード', src('pain', index.pain));
+      drawCard('願いカード', src('wish', index.wish));
+
+      c.fillStyle = C.tealDark; c.font = font(44, 600, SERIF); c.textAlign = 'center';
+      resultLines.forEach((l, i) => c.fillText(l, W / 2, y + 44 + i * resultLH));
+      c.textAlign = 'left';
+      y += resultLines.length * resultLH + 60;
+
+      if (showPrompt) {
+        c.fillStyle = C.tealSoft;
+        c.beginPath();
+        if (c.roundRect) c.roundRect(PAD, y, cardW, promptBoxH, 36); else c.rect(PAD, y, cardW, promptBoxH);
+        c.fill();
+        c.fillStyle = C.teal; c.font = font(28, 700);
+        c.fillText('おまけのお題', PAD + 40, y + 60);
+        c.fillStyle = C.ink; c.font = font(34);
+        promptLines.forEach((l, i) => c.fillText(l, PAD + 40, y + 60 + 40 + 34 + i * promptLH));
+        y += promptBoxH + 20;
+      }
+
+      c.fillStyle = C.sub; c.textAlign = 'center';
+      c.font = font(28); c.fillText('痛みと願いカード ・ カード占い', W / 2, y + 80);
+      c.font = font(26); c.fillText('©2026 Uchida Takeshi', W / 2, y + 124);
+      return new Promise(res => cv.toBlob(res, 'image/png'));
+    }
+
+    let toastTimer = 0;
+    function toast(msg) {
+      el.toast.textContent = msg;
+      el.toast.classList.add('is-shown');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.toast.classList.remove('is-shown'), 3200);
+    }
+    const fileName = () => `itami_negai_${Date.now()}.png`;
+
+    function download(blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName();
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    }
+
+    $('saveBtn').addEventListener('click', async () => {
+      try {
+        const blob = await renderResult();
+        download(blob);
+        toast('画像を保存しました');
+      } catch (e) { toast('画像を保存できませんでした'); }
+    });
+
+    $('shareBtn').addEventListener('click', async () => {
+      let blob;
+      try { blob = await renderResult(); } catch (e) { toast('画像を作れませんでした'); return; }
+      const file = new File([blob], fileName(), { type: 'image/png' });
+      const text = `今日の痛み「${oneLine(PAIN[index.pain])}」／今日の願い「${oneLine(WISH[index.wish])}」 #痛みと願いカード`;
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], text }); }
+        catch (e) { if (e && e.name !== 'AbortError') toast('共有できませんでした'); }
+      } else {
+        download(blob);
+        toast('このブラウザは画像の共有に対応していないため、保存しました');
+      }
+    });
+
+    // ---- はじまり ----
+    setMessage(TEXT.intro);
+    preload().then(showReady);
+  })();
+  </script>
+</body>
+</html>

@@ -11,6 +11,8 @@
 index.html        … 「痛みと願いカード」LP本体（HTML / CSS / JS を1ファイルに集約）
 negai-logo.html   … 「願いのロゴ化セッション」LP（チームかもえさ）
 docs/negai-logo-brief.md … ロゴ化セッションLPの前提情報と未確定事項
+fortune/index.html … 「カード占い」Webアプリ（痛みカード→願いカードをスロットのように引く。Androidアプリのカード占いの移植）
+fortune/cards/    … カード画像 pain_01〜54 / wish_01〜54 / 裏面 back_pain・back_wish
 images/hero.jpg   … メインビジュアル
 images/negai-logo-hero.jpg … ロゴ化セッションLPのメインビジュアル（webp版、SNSシェア用の negai-logo-ogp.jpg あり）
 images/hero.webp  … メインビジュアル（WebP版）
