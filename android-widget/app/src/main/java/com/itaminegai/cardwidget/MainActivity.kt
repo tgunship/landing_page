@@ -9,7 +9,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import java.time.LocalTime
@@ -24,20 +23,20 @@ class MainActivity : Activity() {
         applySystemBarPadding(findViewById(R.id.scroll))
 
         findViewById<View>(R.id.time_row).setOnClickListener { pickRolloverTime() }
-        findViewById<Button>(R.id.reset).setOnClickListener { confirmReset() }
-        findViewById<Button>(R.id.advance).setOnClickListener {
+        findViewById<View>(R.id.reset).setOnClickListener { confirmReset() }
+        findViewById<View>(R.id.advance).setOnClickListener {
             CardDeck.advanceNow(this)
             CardWidgetProvider.updateAll(this)
             refresh()
         }
-        findViewById<Button>(R.id.open_slot).setOnClickListener {
+        findViewById<View>(R.id.open_slot).setOnClickListener {
             startActivity(Intent(this, SlotActivity::class.java))
         }
-        findViewById<Button>(R.id.show_list).setOnClickListener {
+        findViewById<View>(R.id.show_list).setOnClickListener {
             startActivity(Intent(this, CardListActivity::class.java))
         }
 
-        val add = findViewById<Button>(R.id.add_widget)
+        val add = findViewById<View>(R.id.add_widget)
         val manager = AppWidgetManager.getInstance(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && manager.isRequestPinAppWidgetSupported) {
             add.setOnClickListener {
@@ -69,12 +68,15 @@ class MainActivity : Activity() {
             contentDescription = cards.text(CardDeck.Kind.WISH, today.wish.cardIndex)
         }
 
+        findViewById<TextView>(R.id.date).text =
+            java.time.LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy年M月d日(E)", Locale.JAPANESE))
+
         val time = CardDeck.rolloverTime(this).format(TIME_FORMAT)
         findViewById<TextView>(R.id.rollover_time).text = time
         findViewById<TextView>(R.id.how_to).text = getString(R.string.how_to, time)
 
         val next = CardDeck.nextRollover(this)
-            .format(DateTimeFormatter.ofPattern("M月d日(E) H:mm", Locale.JAPANESE))
+            .format(DateTimeFormatter.ofPattern("M/d(E) H:mm", Locale.JAPANESE))
         findViewById<TextView>(R.id.next_change).text = getString(R.string.next_change, next)
         findViewById<TextView>(R.id.progress).text = getString(
             R.string.progress,

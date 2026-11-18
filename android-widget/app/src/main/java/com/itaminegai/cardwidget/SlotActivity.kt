@@ -1,18 +1,26 @@
 package com.itaminegai.cardwidget
 
+import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.Context
-import android.media.AudioManager
-import android.media.ToneGenerator
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.PorterDuff
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.HapticFeedbackConstants
+import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
-import android.widget.Button
 import android.widget.ImageView
+import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import kotlin.math.pow
 import kotlin.random.Random
 
@@ -23,6 +31,7 @@ import kotlin.random.Random
  * 2. スタート → 痛みカードがめくれて、ピコピコと高速で入れ替わる
  * 3. ストップ → ピタッとは止まらず、だんだんゆっくりになって止まる（ときどき「じらし」あり）
  * 4. 続けて願いカードがめくれて回りはじめ、ストップで同じように止まる
+ * 5. 2枚そろうとファンファーレと紙吹雪。お題と、結果画像の保存・共有
  */
 class SlotActivity : Activity() {
 
@@ -35,19 +44,24 @@ class SlotActivity : Activity() {
     private lateinit var painLabel: TextView
     private lateinit var wishLabel: TextView
     private lateinit var message: TextView
-    private lateinit var button: Button
+    private lateinit var button: TextView
     private lateinit var soundToggle: TextView
+    private lateinit var resultSection: View
+    private lateinit var promptView: TextView
+    private lateinit var confetti: ConfettiView
+    private lateinit var prompts: Array<String>
 
     private var state = State.READY
     private var painIndex = -1
     private var wishIndex = -1
-    private var tone: ToneGenerator? = null
+    private var promptIndex = -1
+    private var sound: SoundFx? = null
     private var soundOn = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_slot)
-        applySystemBarPadding(findViewById(R.id.scroll))
+        applySystemBarPadding(findViewById(R.id.root))
 
         cards = CardResources(this)
         painView = findViewById(R.id.pain_card)
@@ -57,6 +71,14 @@ class SlotActivity : Activity() {
         message = findViewById(R.id.message)
         button = findViewById(R.id.slot_button)
         soundToggle = findViewById(R.id.sound_toggle)
+        resultSection = findViewById(R.id.result_section)
+        promptView = findViewById(R.id.prompt)
+        confetti = findViewById(R.id.confetti)
+        prompts = resources.getStringArray(R.array.prompts)
+
+        findViewById<View>(R.id.prompt_other).setOnClickListener { nextPrompt() }
+        findViewById<View>(R.id.save).setOnClickListener { saveResult() }
+        findViewById<View>(R.id.share).setOnClickListener { shareResult() }
 
         val density = resources.displayMetrics.density
         painView.cameraDistance = 8000 * density
@@ -68,6 +90,7 @@ class SlotActivity : Activity() {
             soundOn = !soundOn
             getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_SOUND, soundOn).apply()
             updateSoundToggle()
+            sound?.enabled = soundOn
         }
 
         button.setOnClickListener { onButton() }
@@ -76,11 +99,7 @@ class SlotActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
-        tone = try {
-            ToneGenerator(AudioManager.STREAM_MUSIC, 35)
-        } catch (e: RuntimeException) {
-            null
-        }
+        sound = SoundFx().also { it.enabled = soundOn }
         // 回転中に画面を離れていた場合は再開
         when (state) {
             State.PAIN_SPIN -> spin(CardDeck.Kind.PAIN)
@@ -98,8 +117,8 @@ class SlotActivity : Activity() {
             State.WISH_STOPPING -> lock(CardDeck.Kind.WISH, animate = false)
             else -> Unit
         }
-        tone?.release()
-        tone = null
+        sound?.release()
+        sound = null
     }
 
     private fun onButton() {
@@ -127,6 +146,9 @@ class SlotActivity : Activity() {
             State.DONE -> {
                 // 2枚とも裏向きに戻して最初から
                 setButton(R.string.slot_start, enabled = false)
+                resultSection.animate().alpha(0f).setDuration(200).withEndAction {
+                    resultSection.visibility = View.GONE
+                }.start()
                 flip(painView, R.drawable.back_pain) {}
                 handler.postDelayed({
                     flip(wishView, R.drawable.back_wish) { showReady() }
@@ -142,8 +164,8 @@ class SlotActivity : Activity() {
         wishIndex = -1
         painView.setImageResource(R.drawable.back_pain)
         wishView.setImageResource(R.drawable.back_wish)
-        painLabel.setTextColor(getColor(R.color.ink))
-        wishLabel.setTextColor(getColor(R.color.ink))
+        painLabel.setTextColor(getColor(R.color.sub))
+        wishLabel.setTextColor(getColor(R.color.sub))
         message.setText(R.string.slot_intro)
         setButton(R.string.slot_start, enabled = true)
     }
@@ -197,7 +219,7 @@ class SlotActivity : Activity() {
         view.translationY = -view.height * 0.06f
         view.animate().translationY(0f).setDuration(60).setInterpolator(DecelerateInterpolator()).start()
 
-        if (soundOn) tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 20)
+        sound?.tick()
         if (haptic) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
     }
 
@@ -208,7 +230,7 @@ class SlotActivity : Activity() {
         label.setTextColor(getColor(R.color.teal))
         if (animate) {
             view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-            if (soundOn) tone?.startTone(ToneGenerator.TONE_PROP_ACK, 150)
+            sound?.lock()
             view.scaleX = 1f
             view.scaleY = 1f
             view.animate().scaleX(1.08f).scaleY(1.08f).setDuration(120).withEndAction {
@@ -238,12 +260,108 @@ class SlotActivity : Activity() {
             }
         } else {
             state = State.DONE
-            message.text = getString(
-                R.string.slot_result,
-                cards.text(CardDeck.Kind.PAIN, painIndex),
-                cards.text(CardDeck.Kind.WISH, wishIndex),
-            )
-            setButton(R.string.slot_again, enabled = true)
+            setButton(R.string.slot_again, enabled = false)
+            if (animate) {
+                handler.postDelayed({ celebrate() }, 420)
+            } else {
+                showResult()
+            }
+        }
+    }
+
+    /** 2枚そろったときの演出：ファンファーレ、2枚そろって弾む＋光る、紙吹雪。 */
+    private fun celebrate() {
+        sound?.finale()
+        painView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        for ((i, v) in listOf(painView, wishView).withIndex()) {
+            v.animate().cancel()
+            v.scaleX = 1f
+            v.scaleY = 1f
+            v.animate().scaleX(1.12f).scaleY(1.12f).setStartDelay(i * 60L).setDuration(160).withEndAction {
+                v.animate().scaleX(1f).scaleY(1f).setStartDelay(0).setDuration(520)
+                    .setInterpolator(OvershootInterpolator(4f)).start()
+            }.start()
+            shine(v)
+        }
+        painLabel.setTextColor(getColor(R.color.teal))
+        wishLabel.setTextColor(getColor(R.color.teal))
+        confetti.burst()
+        handler.postDelayed({ showResult() }, 700)
+    }
+
+    /** カードの形のまま白く2回きらっと光らせる。 */
+    private fun shine(view: ImageView) {
+        ValueAnimator.ofFloat(0f, 0.75f, 0f, 0.45f, 0f).apply {
+            duration = 900
+            addUpdateListener {
+                val a = ((it.animatedValue as Float) * 255).toInt()
+                view.setColorFilter(Color.argb(a, 255, 255, 255), PorterDuff.Mode.SRC_ATOP)
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) = view.clearColorFilter()
+            })
+            start()
+        }
+    }
+
+    private fun showResult() {
+        message.text = getString(
+            R.string.slot_result,
+            cards.text(CardDeck.Kind.PAIN, painIndex),
+            cards.text(CardDeck.Kind.WISH, wishIndex),
+        )
+        message.alpha = 0f
+        message.animate().alpha(1f).setDuration(400).start()
+        promptIndex = -1
+        nextPrompt()
+        resultSection.visibility = View.VISIBLE
+        resultSection.alpha = 0f
+        resultSection.translationY = 40f
+        resultSection.animate().alpha(1f).translationY(0f).setDuration(450).start()
+        setButton(R.string.slot_again, enabled = true)
+        // 結果とお題が見えるようにスクロール
+        handler.postDelayed({
+            findViewById<ScrollView>(R.id.scroll).smoothScrollTo(0, message.top)
+        }, 500)
+    }
+
+    private fun nextPrompt() {
+        if (prompts.isEmpty()) return
+        var next = Random.nextInt(prompts.size)
+        if (prompts.size > 1 && next == promptIndex) next = (next + 1) % prompts.size
+        promptIndex = next
+        promptView.text = prompts[next]
+        promptView.alpha = 0f
+        promptView.animate().alpha(1f).setDuration(250).start()
+    }
+
+    private fun resultBitmap() = ResultImage.render(
+        this, painIndex, wishIndex,
+        message.text.toString(),
+        promptView.text.toString(),
+    )
+
+    private fun saveResult() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_SAVE)
+            return
+        }
+        val uri = ResultImage.save(this, resultBitmap())
+        Toast.makeText(this, if (uri != null) R.string.saved else R.string.save_failed, Toast.LENGTH_LONG).show()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_SAVE && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) saveResult()
+    }
+
+    private fun shareResult() {
+        try {
+            ResultImage.share(this, resultBitmap())
+        } catch (e: Exception) {
+            Toast.makeText(this, R.string.save_failed, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -259,7 +377,6 @@ class SlotActivity : Activity() {
     private fun setButton(textRes: Int, enabled: Boolean) {
         button.setText(textRes)
         button.isEnabled = enabled
-        button.alpha = if (enabled) 1f else 0.6f
     }
 
     private fun updateSoundToggle() {
@@ -271,5 +388,6 @@ class SlotActivity : Activity() {
         private const val SPIN_INTERVAL_MS = 75L
         private const val PREFS = "slot"
         private const val KEY_SOUND = "sound"
+        private const val REQUEST_SAVE = 10
     }
 }

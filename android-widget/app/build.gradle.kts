@@ -44,3 +44,8 @@ android {
         jvmTarget = "17"
     }
 }
+
+dependencies {
+    // 共有シートに画像を渡すための FileProvider
+    implementation("androidx.core:core:1.13.1")
+}

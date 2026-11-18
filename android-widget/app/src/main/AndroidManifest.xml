@@ -8,6 +8,10 @@
         android:maxSdkVersion="32" />
     <!-- 再起動後にアラームを再設定する -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Android 9 以前で、占い結果の画像を写真フォルダに保存するため -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:allowBackup="true"
@@ -36,6 +40,16 @@
             android:exported="false"
             android:parentActivityName=".MainActivity"
             android:screenOrientation="portrait" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <receiver
             android:name=".CardWidgetProvider"

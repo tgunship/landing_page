@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="teal">#12838B</color>
-    <color name="ink">#333333</color>
+    <color name="teal_dark">#0D6970</color>
+    <color name="teal_soft">#E7F3F4</color>
+    <color name="teal_disabled">#9CC8CC</color>
+    <color name="ink">#2F3A3B</color>
+    <color name="sub">#6F8183</color>
+    <color name="line">#DCEBEC</color>
+    <color name="screen">#F4F8F8</color>
     <color name="paper">#FFFFFF</color>
 </resources>
