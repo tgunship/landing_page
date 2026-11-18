@@ -52,10 +52,10 @@ object ResultImage {
         val promptLayout = prompt?.let { layout(it, text(34f, ink), cardW - 80, Layout.Alignment.ALIGN_NORMAL) }
 
         // 高さを計算してからキャンバスを作る
-        val headerH = 190
+        val headerH = 230
         val labelH = 64
         val promptBoxH = if (promptLayout == null) 0 else 60 + 50 + promptLayout.height + 46
-        val height = headerH + (labelH + cardH + 40) * 2 + resultLayout.height + 60 + promptBoxH + 140
+        val height = headerH + (labelH + cardH + 40) * 2 + resultLayout.height + 60 + promptBoxH + 170
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         c.drawColor(context.getColor(R.color.screen))
@@ -63,11 +63,19 @@ object ResultImage {
         // ヘッダー
         var y = 80f
         val title = text(56f, teal, bold = true)
-        c.drawText(ALBUM, PAD.toFloat(), y + 50, title)
-        c.drawText("TM", PAD + title.measureText(ALBUM) + 4f, y + 14, text(22f, teal, bold = true))
+        // 痛みと願いカードのイラスト（アプリアイコンと同じ図柄）＋タイトル＋TM
+        val markH = 76
+        val markW = markH * 100 / 83
+        context.getDrawable(R.drawable.app_mark)?.apply {
+            setBounds(PAD, (y - 8).toInt(), PAD + markW, (y - 8).toInt() + markH)
+            draw(c)
+        }
+        val titleX = PAD + markW + 18f
+        c.drawText(ALBUM, titleX, y + 50, title)
+        c.drawText("TM", titleX + title.measureText(ALBUM) + 4f, y + 14, text(22f, teal, bold = true))
+        // 日付はタイトルの下（イラストを入れたので横並びだと重なるため）
         val date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy年M月d日(E)", Locale.JAPANESE))
-        val datePaint = text(34f, sub)
-        c.drawText(date, (W - PAD - datePaint.measureText(date)), y + 46, datePaint)
+        c.drawText(date, titleX, y + 98, text(30f, sub))
         y = headerH.toFloat()
 
         fun drawCard(label: String, resId: Int) {
@@ -98,7 +106,10 @@ object ResultImage {
 
         val footer = text(28f, sub)
         val ft = context.getString(R.string.image_footer)
-        c.drawText(ft, W / 2f - footer.measureText(ft) / 2, y + 90, footer)
+        c.drawText(ft, W / 2f - footer.measureText(ft) / 2, y + 80, footer)
+        val copyright = text(26f, sub)
+        val cr = context.getString(R.string.copyright)
+        c.drawText(cr, W / 2f - copyright.measureText(cr) / 2, y + 124, copyright)
         return bmp
     }
 
