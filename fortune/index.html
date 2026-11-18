@@ -178,8 +178,8 @@
     </section>
 
     <section class="question" id="question">
-      <p class="question__text" id="questionText">この「痛み」と「願い」を感じると、
-今のあなたの中には何がありますか。</p>
+      <p class="question__text" id="questionText">痛みと願い、それぞれを感じると、
+今のあなたの中に何がありますか。</p>
       <button class="prompt-open" id="promptOpen" type="button">＋ おまけのお題をひく</button>
       <div class="prompt" id="prompt">
         <span class="prompt__chip">おまけのお題</span>
@@ -248,10 +248,9 @@
     const TEXT = {
       intro: 'ボタンを押すと、カードが回りはじめます。\nいまの自分に響くタイミングで止めてみてください。',
       painSpinning: '今日の痛みは……',
-      painStopping: '止まるかな……？',
       wishSpinning: p => `「${p}」\n今日の願いは……`,
       done: (p, w) => `今日の痛み「${p}」\n今日の願い「${w}」`,
-      result: 'この「痛み」と「願い」を感じると、\n今のあなたの中には何がありますか。',
+      result: '痛みと願い、それぞれを感じると、\n今のあなたの中に何がありますか。',
     };
 
     const N = 54;
@@ -583,7 +582,6 @@
           break;
         case 'PAIN_SPIN':
           state = 'PAIN_STOPPING';
-          setMessage(TEXT.painStopping);
           setButton('……', false);
           clearTimer();
           slowDown('pain');
