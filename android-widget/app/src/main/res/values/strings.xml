@@ -16,4 +16,9 @@
     <string name="card_number_today">No.%1$d ・ 今日のカード</string>
     <string name="next_change">次の切り替え：%1$s</string>
     <string name="progress">痛み %1$d周目 %2$d/54　・　願い %3$d周目 %4$d/54</string>
+    <string name="reset">表示した回数をリセット</string>
+    <string name="reset_confirm_title">本当にリセットしますか？</string>
+    <string name="reset_confirm_message">痛みカード・願いカードの表示した回数（何周目・何日目）をリセットし、新しい順番で1周目の1日目から始め直します。今表示しているカードも変わります。\n\nこの操作は元に戻せません。</string>
+    <string name="reset_confirm_ok">リセットする</string>
+    <string name="reset_confirm_cancel">キャンセル</string>
 </resources>

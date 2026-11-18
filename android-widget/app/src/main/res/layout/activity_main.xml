@@ -123,6 +123,15 @@
             android:text="@string/add_widget"
             android:textColor="@color/paper" />
 
+        <Button
+            android:id="@+id/reset"
+            style="@android:style/Widget.Material.Button.Borderless.Colored"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/reset"
+            android:textColor="@color/teal" />
+
         <TextView
             android:id="@+id/how_to"
             android:layout_width="match_parent"

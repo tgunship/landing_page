@@ -53,6 +53,19 @@ object CardDeck {
             .commit()
     }
 
+    /**
+     * 表示した回数をリセットする。両方の山札を新しくシャッフルし、1周目の1日目から始め直す。
+     * 切り替え時刻の設定はそのまま。
+     */
+    @Synchronized
+    fun reset(context: Context) {
+        val prefs = prefs(context)
+        val editor = prefs.edit()
+        Kind.values().forEach { startCycle(editor, it, cycle = 1, previousLast = -1) }
+        editor.putLong(KEY_PERIOD, currentPeriod(rolloverTime(context)).toEpochDay())
+        editor.commit()
+    }
+
     /** 今の時刻が属する「日」（直近の切り替え時刻が属する日付）。 */
     fun currentPeriod(time: LocalTime, now: ZonedDateTime = ZonedDateTime.now()): LocalDate {
         val today = now.toLocalDate()

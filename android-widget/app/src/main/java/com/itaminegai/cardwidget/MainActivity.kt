@@ -1,6 +1,7 @@
 package com.itaminegai.cardwidget
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.TimePickerDialog
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -23,6 +24,7 @@ class MainActivity : Activity() {
         applySystemBarPadding(findViewById(R.id.scroll))
 
         findViewById<View>(R.id.time_row).setOnClickListener { pickRolloverTime() }
+        findViewById<Button>(R.id.reset).setOnClickListener { confirmReset() }
         findViewById<Button>(R.id.show_list).setOnClickListener {
             startActivity(Intent(this, CardListActivity::class.java))
         }
@@ -81,6 +83,20 @@ class MainActivity : Activity() {
             CardWidgetProvider.updateAll(this)
             refresh()
         }, current.hour, current.minute, true).show()
+    }
+
+    private fun confirmReset() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.reset_confirm_title)
+            .setMessage(R.string.reset_confirm_message)
+            .setPositiveButton(R.string.reset_confirm_ok) { _, _ ->
+                CardDeck.reset(this)
+                CardWidgetProvider.updateAll(this)
+                if (CardWidgetProvider.hasWidgets(this)) RolloverScheduler.schedule(this)
+                refresh()
+            }
+            .setNegativeButton(R.string.reset_confirm_cancel, null)
+            .show()
     }
 
     companion object {
