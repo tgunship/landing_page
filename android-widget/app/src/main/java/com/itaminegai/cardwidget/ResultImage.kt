@@ -30,7 +30,7 @@ object ResultImage {
     private const val PAD = 72
     private const val ALBUM = "痛みと願いカード"
 
-    fun render(context: Context, painIndex: Int, wishIndex: Int, result: String, prompt: String): Bitmap {
+    fun render(context: Context, painIndex: Int, wishIndex: Int, result: String, prompt: String?): Bitmap {
         val res = context.resources
         val cards = CardResources(context)
         val teal = context.getColor(R.color.teal)
@@ -48,13 +48,13 @@ object ResultImage {
             StaticLayout.Builder.obtain(s, 0, s.length, p, width).setAlignment(align)
                 .setLineSpacing(0f, 1.35f).build()
 
-        val resultLayout = layout(result, text(44f, ink, bold = true), cardW)
-        val promptLayout = layout(prompt, text(38f, ink), cardW - 80)
+        val resultLayout = layout(result, text(44f, context.getColor(R.color.teal_dark), bold = true), cardW)
+        val promptLayout = prompt?.let { layout(it, text(34f, ink), cardW - 80, Layout.Alignment.ALIGN_NORMAL) }
 
         // 高さを計算してからキャンバスを作る
         val headerH = 190
         val labelH = 64
-        val promptBoxH = 70 + 56 + promptLayout.height + 50
+        val promptBoxH = if (promptLayout == null) 0 else 60 + 50 + promptLayout.height + 46
         val height = headerH + (labelH + cardH + 40) * 2 + resultLayout.height + 60 + promptBoxH + 140
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
@@ -64,6 +64,7 @@ object ResultImage {
         var y = 80f
         val title = text(56f, teal, bold = true)
         c.drawText(ALBUM, PAD.toFloat(), y + 50, title)
+        c.drawText("TM", PAD + title.measureText(ALBUM) + 4f, y + 14, text(22f, teal, bold = true))
         val date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy年M月d日(E)", Locale.JAPANESE))
         val datePaint = text(34f, sub)
         c.drawText(date, (W - PAD - datePaint.measureText(date)), y + 46, datePaint)
@@ -86,14 +87,14 @@ object ResultImage {
         c.save(); c.translate(PAD.toFloat(), y); resultLayout.draw(c); c.restore()
         y += resultLayout.height + 60
 
-        // お題
-        val box = RectF(PAD.toFloat(), y, (W - PAD).toFloat(), y + promptBoxH)
-        c.drawRoundRect(box, 36f, 36f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.teal_soft) })
-        val promptTitle = text(32f, teal, bold = true)
-        val pt = context.getString(R.string.prompt_title)
-        c.drawText(pt, W / 2f - promptTitle.measureText(pt) / 2, y + 70, promptTitle)
-        c.save(); c.translate(PAD + 40f, y + 70 + 56); promptLayout.draw(c); c.restore()
-        y += promptBoxH
+        // おまけのお題（開いたときだけ）
+        if (promptLayout != null) {
+            val box = RectF(PAD.toFloat(), y, (W - PAD).toFloat(), y + promptBoxH)
+            c.drawRoundRect(box, 36f, 36f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.teal_soft) })
+            c.drawText(context.getString(R.string.prompt_title), PAD + 40f, y + 60, text(28f, teal, bold = true))
+            c.save(); c.translate(PAD + 40f, y + 60 + 50); promptLayout.draw(c); c.restore()
+            y += promptBoxH
+        }
 
         val footer = text(28f, sub)
         val ft = context.getString(R.string.image_footer)

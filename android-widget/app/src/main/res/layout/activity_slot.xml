@@ -128,48 +128,80 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
+                <!-- おまけのお題（本来の問いは上のメッセージ。こちらは希望したときだけ開く） -->
+                <TextView
+                    android:id="@+id/prompt_open"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_row"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:text="@string/prompt_open"
+                    android:textColor="@color/teal"
+                    android:textSize="14sp" />
+
                 <LinearLayout
+                    android:id="@+id/prompt_box"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="12dp"
                     android:background="@drawable/bg_prompt"
                     android:orientation="vertical"
-                    android:padding="18dp">
+                    android:paddingStart="18dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="18dp"
+                    android:paddingBottom="8dp"
+                    android:visibility="gone">
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
+                        android:background="@drawable/bg_chip_white"
+                        android:paddingStart="10dp"
+                        android:paddingTop="2dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="2dp"
                         android:text="@string/prompt_title"
                         android:textColor="@color/teal"
-                        android:textSize="13sp"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/prompt_hint"
+                        android:textColor="@color/sub"
+                        android:textSize="11sp" />
 
                     <TextView
                         android:id="@+id/prompt"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:gravity="center"
                         android:lineSpacingMultiplier="1.4"
                         android:textColor="@color/ink"
-                        android:textSize="16sp" />
+                        android:textSize="14sp" />
 
                     <TextView
                         android:id="@+id/prompt_other"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="6dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="end"
                         android:background="@drawable/bg_row"
                         android:clickable="true"
                         android:focusable="true"
                         android:gravity="center"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
                         android:text="@string/prompt_other"
                         android:textColor="@color/teal"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 

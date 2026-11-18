@@ -31,13 +31,15 @@
     <string name="slot_pain_spinning">あなたの痛みは……</string>
     <string name="slot_pain_stopping">止まるかな……？</string>
     <string name="slot_wish_spinning">「%1$s」\nその奥にある願いは……</string>
-    <string name="slot_result">痛み「%1$s」の奥には、\n願い「%2$s」が隠れているのかもしれません。</string>
+    <string name="slot_result">今選ばれた痛みカードと願いカードを感じると、\n今のあなたの中には何がありますか。</string>
     <string name="sound_on">♪ 音あり</string>
     <string name="sound_off">音なし</string>
     <string name="section_play">あそぶ・ながめる</string>
     <string name="section_settings">設定</string>
     <string name="slot_tile_sub">スロットのように、痛みと願いを1枚ずつ引く</string>
-    <string name="prompt_title">お題</string>
+    <string name="prompt_title">おまけのお題</string>
+    <string name="prompt_open">＋ おまけのお題をひく</string>
+    <string name="prompt_hint">もう少し深めてみたいときのヒントです</string>
     <string name="prompt_other">別のお題</string>
     <string name="save_image">画像を保存</string>
     <string name="share_image">共有する</string>
@@ -45,4 +47,6 @@
     <string name="save_failed">画像を保存できませんでした</string>
     <string name="share_chooser">結果を共有</string>
     <string name="image_footer">痛みと願いカード ・ カード占い</string>
+    <string name="trademark">TM</string>
+    <string name="trademark_desc">トレードマーク</string>
 </resources>

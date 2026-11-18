@@ -48,6 +48,8 @@ class SlotActivity : Activity() {
     private lateinit var soundToggle: TextView
     private lateinit var resultSection: View
     private lateinit var promptView: TextView
+    private lateinit var promptBox: View
+    private lateinit var promptOpen: View
     private lateinit var confetti: ConfettiView
     private lateinit var prompts: Array<String>
 
@@ -73,6 +75,9 @@ class SlotActivity : Activity() {
         soundToggle = findViewById(R.id.sound_toggle)
         resultSection = findViewById(R.id.result_section)
         promptView = findViewById(R.id.prompt)
+        promptBox = findViewById(R.id.prompt_box)
+        promptOpen = findViewById(R.id.prompt_open)
+        promptOpen.setOnClickListener { openPrompt() }
         confetti = findViewById(R.id.confetti)
         prompts = resources.getStringArray(R.array.prompts)
 
@@ -167,6 +172,9 @@ class SlotActivity : Activity() {
         painLabel.setTextColor(getColor(R.color.sub))
         wishLabel.setTextColor(getColor(R.color.sub))
         message.setText(R.string.slot_intro)
+        message.textSize = 16f
+        message.setTypeface(null, android.graphics.Typeface.NORMAL)
+        message.setTextColor(getColor(R.color.ink))
         setButton(R.string.slot_start, enabled = true)
     }
 
@@ -305,15 +313,17 @@ class SlotActivity : Activity() {
     }
 
     private fun showResult() {
-        message.text = getString(
-            R.string.slot_result,
-            cards.text(CardDeck.Kind.PAIN, painIndex),
-            cards.text(CardDeck.Kind.WISH, wishIndex),
-        )
+        // 本来の問い。結果のときだけ大きく強調する
+        message.setText(R.string.slot_result)
+        message.textSize = 18f
+        message.setTypeface(null, android.graphics.Typeface.BOLD)
+        message.setTextColor(getColor(R.color.teal_dark))
         message.alpha = 0f
         message.animate().alpha(1f).setDuration(400).start()
+        // おまけのお題は閉じた状態から
         promptIndex = -1
-        nextPrompt()
+        promptBox.visibility = View.GONE
+        promptOpen.visibility = View.VISIBLE
         resultSection.visibility = View.VISIBLE
         resultSection.alpha = 0f
         resultSection.translationY = 40f
@@ -323,6 +333,17 @@ class SlotActivity : Activity() {
         handler.postDelayed({
             findViewById<ScrollView>(R.id.scroll).smoothScrollTo(0, message.top)
         }, 500)
+    }
+
+    private fun openPrompt() {
+        promptOpen.visibility = View.GONE
+        nextPrompt()
+        promptBox.visibility = View.VISIBLE
+        promptBox.alpha = 0f
+        promptBox.animate().alpha(1f).setDuration(300).start()
+        handler.postDelayed({
+            findViewById<ScrollView>(R.id.scroll).smoothScrollTo(0, resultSection.bottom)
+        }, 320)
     }
 
     private fun nextPrompt() {
@@ -338,7 +359,8 @@ class SlotActivity : Activity() {
     private fun resultBitmap() = ResultImage.render(
         this, painIndex, wishIndex,
         message.text.toString(),
-        promptView.text.toString(),
+        // おまけのお題は開いたときだけ画像に入れる
+        if (promptBox.visibility == View.VISIBLE) promptView.text.toString() else null,
     )
 
     private fun saveResult() {
