@@ -28,10 +28,10 @@
     <string name="slot_stopping">……</string>
     <string name="slot_again">もう一度</string>
     <string name="slot_intro">ボタンを押すと、カードが回りはじめます。\nいまの自分に響くタイミングで止めてみてください。</string>
-    <string name="slot_pain_spinning">あなたの痛みは……</string>
+    <string name="slot_pain_spinning">今日の痛みは……</string>
     <string name="slot_pain_stopping">止まるかな……？</string>
-    <string name="slot_wish_spinning">「%1$s」\nその奥にある願いは……</string>
-    <string name="slot_result">今選ばれた痛みカードと願いカードを感じると、\n今のあなたの中には何がありますか。</string>
+    <string name="slot_wish_spinning">「%1$s」\n今日の願いは……</string>
+    <string name="slot_result">この「痛み」と「願い」を感じると、\n今のあなたの中には何がありますか。</string>
     <string name="sound_on">♪ 音あり</string>
     <string name="sound_off">音なし</string>
     <string name="section_play">あそぶ・ながめる</string>
@@ -49,4 +49,5 @@
     <string name="image_footer">痛みと願いカード ・ カード占い</string>
     <string name="trademark">TM</string>
     <string name="trademark_desc">トレードマーク</string>
+    <string name="slot_done_header">今日の痛み「%1$s」\n今日の願い「%2$s」</string>
 </resources>

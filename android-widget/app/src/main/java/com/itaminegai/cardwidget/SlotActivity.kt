@@ -47,6 +47,7 @@ class SlotActivity : Activity() {
     private lateinit var button: TextView
     private lateinit var soundToggle: TextView
     private lateinit var resultSection: View
+    private lateinit var questionSection: View
     private lateinit var promptView: TextView
     private lateinit var promptBox: View
     private lateinit var promptOpen: View
@@ -74,6 +75,7 @@ class SlotActivity : Activity() {
         button = findViewById(R.id.slot_button)
         soundToggle = findViewById(R.id.sound_toggle)
         resultSection = findViewById(R.id.result_section)
+        questionSection = findViewById(R.id.question_section)
         promptView = findViewById(R.id.prompt)
         promptBox = findViewById(R.id.prompt_box)
         promptOpen = findViewById(R.id.prompt_open)
@@ -151,9 +153,11 @@ class SlotActivity : Activity() {
             State.DONE -> {
                 // 2枚とも裏向きに戻して最初から
                 setButton(R.string.slot_start, enabled = false)
-                resultSection.animate().alpha(0f).setDuration(200).withEndAction {
-                    resultSection.visibility = View.GONE
-                }.start()
+                for (section in listOf(questionSection, resultSection)) {
+                    section.animate().alpha(0f).setDuration(200).withEndAction {
+                        section.visibility = View.GONE
+                    }.start()
+                }
                 flip(painView, R.drawable.back_pain) {}
                 handler.postDelayed({
                     flip(wishView, R.drawable.back_wish) { showReady() }
@@ -172,9 +176,6 @@ class SlotActivity : Activity() {
         painLabel.setTextColor(getColor(R.color.sub))
         wishLabel.setTextColor(getColor(R.color.sub))
         message.setText(R.string.slot_intro)
-        message.textSize = 16f
-        message.setTypeface(null, android.graphics.Typeface.NORMAL)
-        message.setTextColor(getColor(R.color.ink))
         setButton(R.string.slot_start, enabled = true)
     }
 
@@ -313,25 +314,28 @@ class SlotActivity : Activity() {
     }
 
     private fun showResult() {
-        // 本来の問い。結果のときだけ大きく強調する
-        message.setText(R.string.slot_result)
-        message.textSize = 18f
-        message.setTypeface(null, android.graphics.Typeface.BOLD)
-        message.setTextColor(getColor(R.color.teal_dark))
+        // 上のメッセージには今日の2枚の名前。本来の問いはカードの下（question_section）に出す
+        message.text = getString(
+            R.string.slot_done_header,
+            cards.text(CardDeck.Kind.PAIN, painIndex),
+            cards.text(CardDeck.Kind.WISH, wishIndex),
+        )
         message.alpha = 0f
         message.animate().alpha(1f).setDuration(400).start()
         // おまけのお題は閉じた状態から
         promptIndex = -1
         promptBox.visibility = View.GONE
         promptOpen.visibility = View.VISIBLE
-        resultSection.visibility = View.VISIBLE
-        resultSection.alpha = 0f
-        resultSection.translationY = 40f
-        resultSection.animate().alpha(1f).translationY(0f).setDuration(450).start()
+        for (section in listOf(questionSection, resultSection)) {
+            section.visibility = View.VISIBLE
+            section.alpha = 0f
+            section.translationY = 40f
+            section.animate().alpha(1f).translationY(0f).setDuration(450).start()
+        }
         setButton(R.string.slot_again, enabled = true)
         // 結果とお題が見えるようにスクロール
         handler.postDelayed({
-            findViewById<ScrollView>(R.id.scroll).smoothScrollTo(0, message.top)
+            findViewById<ScrollView>(R.id.scroll).smoothScrollTo(0, questionSection.top - message.height)
         }, 500)
     }
 
@@ -342,7 +346,7 @@ class SlotActivity : Activity() {
         promptBox.alpha = 0f
         promptBox.animate().alpha(1f).setDuration(300).start()
         handler.postDelayed({
-            findViewById<ScrollView>(R.id.scroll).smoothScrollTo(0, resultSection.bottom)
+            findViewById<ScrollView>(R.id.scroll).smoothScrollTo(0, questionSection.top)
         }, 320)
     }
 
@@ -358,7 +362,7 @@ class SlotActivity : Activity() {
 
     private fun resultBitmap() = ResultImage.render(
         this, painIndex, wishIndex,
-        message.text.toString(),
+        getString(R.string.slot_result),
         // おまけのお題は開いたときだけ画像に入れる
         if (promptBox.visibility == View.VISIBLE) promptView.text.toString() else null,
     )

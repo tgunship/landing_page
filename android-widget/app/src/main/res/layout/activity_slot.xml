@@ -115,18 +115,25 @@
                     android:src="@drawable/back_wish" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/slot_button"
-                style="@style/PillButton"
-                android:layout_marginTop="20dp" />
-
-            <!-- 結果（2枚そろってから表示） -->
+            <!-- 結果の問い（本来のお題）と、おまけのお題。カードと「もう一度」の間に出す -->
             <LinearLayout
-                android:id="@+id/result_section"
+                android:id="@+id/question_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/question"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:gravity="center"
+                    android:lineSpacingMultiplier="1.4"
+                    android:text="@string/slot_result"
+                    android:textColor="@color/teal_dark"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <!-- おまけのお題（本来の問いは上のメッセージ。こちらは希望したときだけ開く） -->
                 <TextView
@@ -204,6 +211,21 @@
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/slot_button"
+                style="@style/PillButton"
+                android:layout_marginTop="20dp" />
+
+            <!-- 結果（2枚そろってから表示） -->
+            <LinearLayout
+                android:id="@+id/result_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
