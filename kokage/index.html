@@ -66,7 +66,6 @@
     }
 
     function statusBadge(ev) {
-      if (ev.status === '開催決定') return '<span class="badge go">開催決定</span>';
       return '<span class="badge">参加者募集中</span>';
     }
 
@@ -99,7 +98,7 @@
           </div>
           <p class="desc">${esc(ev.description)}</p>
           ${ev.workLine ? `<p class="hint" style="margin:-4px 0 12px">${esc(ev.workLine)}</p>` : ''}
-          ${ev.status === '募集中' ? `<p class="hint" style="margin:-4px 0 8px">開催判定：${esc(ev.decisionLabel)}（開催が決まったら、当日の開始まで申し込めます）</p>` : ''}
+          ${ev.venueSplit ? `<p class="hint" style="margin:-4px 0 8px">場所代は合計${yen(ev.venueFeeTotal)}を参加者で割り勘します（人数によって変わります）</p>` : ''}
           <div class="counts">いまの申込：はじめての方・一般 ${c.guests}名 ／ 仲間 ${c.members}名　（残り${ev.remaining}席）</div>
           ${ev.mine && opts.mine ? `<p class="hint" style="margin-bottom:10px">当日のお支払い：${yen(ev.mine.fee)}</p>` : ''}
           ${action}
@@ -114,7 +113,7 @@
 
       if (state.tab === 'events') {
         app.innerHTML = d.events.length
-          ? `<p class="hint" style="margin-bottom:14px">開催日の3日前の12時に、開催するかどうかを決めてLINEでお知らせします。開催が決まった回は、当日の開始時刻まで申し込めます。1回3時間（前半2時間はテーマに沿ってじっくり、後半1時間はゆるやかなフリータイム）です。</p>` + d.events.map((ev) => eventCard(ev)).join('')
+          ? `<p class="hint" style="margin-bottom:14px">1回3時間：前半2時間はテーマに沿ってじっくり、後半1時間は感想の投稿やフリートークの時間です。当日の開始時刻まで申し込めます。</p>` + d.events.map((ev) => eventCard(ev)).join('')
           : '<div class="empty">いま募集中の木陰はありません。<br>次の木陰が決まったら、Instagramでもお知らせします。</div>';
       } else if (state.tab === 'mine') {
         const mine = d.events.filter((e) => e.mine);
@@ -128,7 +127,7 @@
         app.innerHTML = `
           <div class="card">
             <h3>木陰で扱ってほしいテーマ</h3>
-            <p class="meta">「こんなテーマで話してみたい」「こんな時間がほしい」を気軽に届けてください。ライフクエストの仲間が「やりたい！」と手を挙げたら、木陰として開かれます。</p>
+            <p class="meta">「こんなテーマで話してみたい」「こんな時間がほしい」を気軽に届けてください。「やりたい！」と手を挙げる人がいたら、木陰として開かれます。</p>
             <label class="field"><span>テーマ・想い</span><textarea id="req-text" placeholder="例）つい人の目を気にして疲れてしまう…そんな自分とゆっくり向き合いたい"></textarea></label>
             <button class="btn block" id="req-send">届ける</button>
           </div>`;
@@ -138,43 +137,45 @@
       $$('[data-cancel]').forEach((b) => b.addEventListener('click', () => cancel(b.dataset.cancel)));
     }
 
-    // ---- 申込状況（LQメンバー・運営） ----
+    // ---- 申込状況（IQ受講生・ホスト・運営） ----
     async function renderStatus() {
       const app = $('#app');
       app.innerHTML = '<div class="loading"><div class="spinner"></div>読み込んでいます…</div>';
       let st;
       try { st = await api('status'); } catch (e) { app.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
       if (state.tab !== 'status') return;
-      const badge = (s) => `<span class="badge ${({ '開催決定': 'go', '中止': 'cancel', '終了': 'done' })[s] || ''}">${esc(s)}</span>`;
-      app.innerHTML = `<p class="hint" style="margin-bottom:14px">${st.admin ? '運営として、すべての回の申込状況を表示しています。' : '募集中・開催決定の回の申込状況です。'}開催の条件：合計${st.minTotal}名以上、うち一般${st.minGuest}名以上。</p>` +
+      const badge = (s) => `<span class="badge ${({ '終了': 'done' })[s] || ''}">${esc(s)}</span>`;
+      app.innerHTML = `<p class="hint" style="margin-bottom:14px">${st.admin ? '運営として、すべての回の申込状況を表示しています。' : '募集中の回の申込状況です。'}運営（うってぃ・ぎっしー）は人数に含みません。</p>` +
         (st.events.length ? st.events.map((ev) => {
           const c = ev.counts;
           const rows = ev.registrations.map((r) => `<tr class="${r.status === 'キャンセル' ? 'cancelled' : ''}"><td>${esc(r.name)}</td><td>${esc(r.type)}</td>${st.admin ? `<td>${yen(r.fee)}</td><td>${r.first ? '初回' : ''}${r.share ? ' シェア' : ''}</td><td>${esc(r.referrer || '')}</td>` : ''}</tr>`).join('');
           return `<article class="card">
             <div class="badges">${badge(ev.status)}${ev.isHost ? '<span class="badge mine">あなたがホスト</span>' : ''}</div>
             <h3>${esc(ev.title)}</h3>
-            <div class="meta"><div>📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}</div><div>🌿 ホスト：${esc(ev.host || '')}</div>${ev.status === '募集中' ? `<div>⏰ 開催判定：${esc(ev.decisionLabel)}</div>` : ''}</div>
-            <div class="counts">合計 <b>${c.total}</b>名${c.total >= st.minTotal ? ' ✅' : `（あと${st.minTotal - c.total}名）`}　一般 <b>${c.guests}</b>名${c.guests >= st.minGuest ? ' ✅' : `（あと${st.minGuest - c.guests}名）`}　仲間 ${c.members}名　残り${ev.remaining}席</div>
+            <div class="meta"><div>📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}</div><div>📍 ${esc(ev.venue)}</div><div>🌿 ホスト：${esc(ev.host || '')}</div></div>
+            <div class="counts">合計 <b>${c.total}</b>名　一般 <b>${c.guests}</b>名　仲間・ホスト ${c.members}名　残り${ev.remaining}席</div>
             ${rows ? `<table class="regs"><thead><tr><th>名前</th><th>区分</th>${st.admin ? '<th>当日</th><th></th><th>紹介</th>' : ''}</tr></thead><tbody>${rows}</tbody></table>` : '<p class="hint">まだ申込はありません。</p>'}
           </article>`;
         }).join('') : '<div class="empty">表示できる回はありません。</div>');
     }
 
     // ---- 申し込み ----
-    function feeFor(share) {
+    function feeFor(share, ev) {
       const d = state.data;
-      if (d.me.role !== 'guest') return { lines: [['参加費（仲間）', 0], ['場所代', d.fees.venue]], total: d.fees.venue };
+      const venue = ev.venueShareIfJoin;
+      const venueLabel = ev.venueSplit ? `場所代（合計${yen(ev.venueFeeTotal)}を割り勘・いまの人数で）` : '場所代（イバフォルニア・ベース利用料）';
+      if (d.me.role !== 'guest') return { lines: [['参加費（IQ受講生）', 0], [venueLabel, venue]], total: venue };
       const base = d.me.firstTime ? d.fees.first : d.fees.regular;
       const disc = share ? Math.min(d.fees.discount, base) : 0;
       const lines = [[d.me.firstTime ? '参加費（はじめての方）' : '参加費', base]];
       if (disc) lines.push(['発信・口コミ割引', -disc]);
-      lines.push(['場所代（イバフォルニア・ベース利用料）', d.fees.venue]);
-      return { lines, total: base - disc + d.fees.venue };
+      lines.push([venueLabel, venue]);
+      return { lines, total: base - disc + venue };
     }
 
-    function renderFee() {
+    function renderFee(ev) {
       const share = $('#f-share') ? $('#f-share').checked : false;
-      const f = feeFor(share);
+      const f = feeFor(share, ev);
       $('#fee-box').innerHTML = f.lines.map(([k, v]) => `<div class="fee-row"><span>${esc(k)}</span><span>${v < 0 ? '−' + yen(-v) : yen(v)}</span></div>`).join('') +
         `<div class="fee-total"><span>当日のお支払い</span><span>${yen(f.total)}</span></div>`;
     }
@@ -187,23 +188,18 @@
         <h3>${esc(ev.title)}</h3>
         <p class="meta">📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}　📍 ${esc(ev.venue)}</p>
         <p style="font-weight:700;margin:0 0 6px">木陰のグランドルール</p>
-        <ul class="rules">
-          <li>人のことも自分のことも、評価・判断しない</li>
-          <li>アドバイスしない（ただ受け取り合う）</li>
-          <li>ここで聞いた話は、外に持ち出さない</li>
-          <li>安心して自分の内面とつながる時間を大切にする</li>
-        </ul>
+        <ul class="rules">${state.data.rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
         <label class="check"><input type="checkbox" id="f-agree"><span><b>グランドルールに同意します</b>（必須）</span></label>
         <label class="field"><span>紹介してくれた人・きっかけ（任意）</span><input type="text" id="f-ref" maxlength="100" placeholder="例）〇〇さんの紹介／〇〇さんのインスタを見て"></label>
         ${isGuest ? `<label class="check"><input type="checkbox" id="f-share"><span>参加後に、Instagramや口コミで感想をシェアします（参加費から${yen(state.data.fees.discount)}割引）<br><span class="hint">シェアは強制ではありません。自分のペースでどうぞ。</span></span></label>` : `<p class="hint">${esc(state.data.me.roleLabel)}の方は、参加費なし・場所代のみです。</p>`}
         <div class="fee" id="fee-box"></div>
-        <p class="hint" style="margin-bottom:12px">お支払いは当日会場でお願いします。開催日の3日前に、開催するかどうかをLINEでお知らせします。</p>
+        <p class="hint" style="margin-bottom:12px">お支払いは当日会場でお願いします。${ev.venueSplit ? '場所代は参加人数で割り勘するので、人数によって変わります。' : ''}</p>
         <p class="hint" style="margin-bottom:12px">お申し込み内容とLINEの表示名は、木陰の運営（ここち）が申込の管理とご連絡のためだけに使います。<a href="privacy.html" target="_blank" rel="noopener">個人情報の取り扱い</a></p>
         <button class="btn block" id="f-submit" disabled>申し込む</button>
         <button class="btn ghost block" id="f-close" style="margin-top:10px">閉じる</button>`;
-      renderFee();
+      renderFee(ev);
       $('#f-agree').addEventListener('change', (e) => { $('#f-submit').disabled = !e.target.checked; });
-      if ($('#f-share')) $('#f-share').addEventListener('change', renderFee);
+      if ($('#f-share')) $('#f-share').addEventListener('change', () => renderFee(ev));
       $('#f-close').addEventListener('click', closeSheet);
       $('#f-submit').addEventListener('click', () => submitApply(ev));
       $('#apply-sheet').classList.add('open');
@@ -229,8 +225,8 @@
             <div class="leaf">🌿</div>
             <h3>お申し込みありがとうございます</h3>
             <p>『${esc(ev.title)}』<br>${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}</p>
-            <p><b>当日のお支払い：${yen(res.fee.total)}</b></p>
-            <p class="meta">${sent ? 'LINEのトークに確認メッセージをお送りしました。' : ''}開催日の3日前に、開催するかどうかをLINEでお知らせします。</p>
+            <p><b>当日のお支払い：${yen(res.fee.total)}</b>${res.fee.split ? '<br><span class="hint">（場所代は割り勘のため、人数によって変わります）</span>' : ''}</p>
+            <p class="meta">${sent ? 'LINEのトークに確認メッセージをお送りしました。' : ''}当日お会いできるのを楽しみにしています。</p>
             <div class="card" style="background:var(--main-pale);box-shadow:none">
               <p style="margin-bottom:10px">急なお知らせや、日々の木陰の様子はInstagramでお届けしています。<br><b>ぜひ「ここち」をフォローしてくださいね。</b></p>
               <a class="btn insta block" href="${esc(res.instagramUrl)}" target="_blank" rel="noopener">Instagramをフォローする</a>

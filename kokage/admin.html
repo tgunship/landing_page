@@ -61,18 +61,12 @@
       const total = +m[1] * 60 + +m[2] + h * 60;
       return String(Math.floor(total / 60) % 24).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
     }
-    function minDate() {
-      const c = S.data.config;
-      const d = new Date();
-      // 判定時刻（N日前の◯時）が未来になる最初の日
-      d.setDate(d.getDate() + c.daysBefore + (d.getHours() >= c.hour ? 1 : 0));
-      return localIso(d);
-    }
+    function minDate() { return localIso(new Date()); }
     function localIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
     function blankForm() {
       const c = S.data.config;
-      return { hostId: S.data.me.id, format: '', workTitle: '', idea: '', date: '', start: c.start, venue: c.venue, max: c.max, title: '', description: '', body: '', sourceEventId: '', sourceTitle: '' };
+      return { hostId: S.data.me.id, format: '', workTitle: '', idea: '', date: '', start: c.start, venue: c.venue, venueFeeTotal: '', max: c.max, title: '', description: '', body: '' };
     }
 
     function captionInfo(f) {
@@ -84,10 +78,13 @@
         ...(workCaption(f) ? [workCaption(f)] : []),
         `📅 ${dateLabel(f.date)} ${f.start}〜${end}`,
         `📍 ${f.venue}`,
-        `💴 はじめての方 ${yen(c.fees.first + c.fees.venue)}／2回目以降 ${yen(c.fees.regular + c.fees.venue)}（場所代${yen(c.fees.venue)}込み）`,
+        ...(isOtherVenue(f)
+          ? [`💴 参加費 はじめての方 ${yen(c.fees.first)}／2回目以降 ${yen(c.fees.regular)}`,
+             `　 ＋場所代（合計${yen(Number(f.venueFeeTotal) || 0)}を参加者で割り勘）`]
+          : [`💴 はじめての方 ${yen(c.fees.first + c.fees.venue)}／2回目以降 ${yen(c.fees.regular + c.fees.venue)}（場所代${yen(c.fees.venue)}込み）`]),
         `　 参加後に感想をシェアしてくださる方は${yen(c.fees.discount)}引き`,
-        `　 ライフクエスト・インナークエストの仲間は場所代のみ`,
-        '🕊 開催日の3日前に、開催が決まったらLINEでお知らせします',
+        `　 インナークエスト受講生は場所代のみ`,
+        `🕊 前半${c.core}時間はじっくり、後半は感想の投稿やフリートーク`,
         '',
         `お申し込みは ${c.instagramHandle} のプロフィールのリンク（公式LINE）から`,
         '',
@@ -122,11 +119,10 @@
         ${S.published ? `
           <div class="card" style="border:2px solid var(--main)">
             <h3>🌿 公開しました。募集がはじまりました</h3>
-            <p class="meta">画像を保存し、下の投稿文をコピーして、ここちのInstagramに投稿してください（ホストのメンバーを共同投稿者／メンションに）。${S.published.invited ? `<br>前回申し込んでくれた一般の方 ${S.published.invited}名に、特別ご案内のLINEを送りました。` : ''}</p>
+            <p class="meta">画像を保存し、下の投稿文をコピーして、ここちのInstagramに投稿してください（ホストを共同投稿者／メンションに）。</p>
             <div class="copy-row"><input type="text" readonly value="${esc(S.published.link)}"><button class="btn small" data-copy="${esc(S.published.link)}">申込リンクをコピー</button></div>
             <button class="btn ghost small" id="new-form" style="margin-top:12px">新しい木陰をつくる</button>
           </div>` : ''}
-        ${f.sourceEventId ? `<div class="banner">『${esc(f.sourceTitle)}』を<b>別日で再企画</b>しています。公開すると、前回申し込んでくれた一般の方へ特別ご案内のLINEが自動で届きます。</div>` : ''}
         <div class="grid2">
           <section>
             <div class="card">
@@ -134,11 +130,11 @@
               <label class="field"><span>ホスト<span class="req">必須</span></span>
                 <select id="f-host">
                   ${f.hostId ? '' : '<option value="" selected>選んでください</option>'}
-                  ${hosts.map((h) => `<option value="${esc(h.id)}" ${h.id === f.hostId ? 'selected' : ''}>${esc(h.name)}（${h.staff ? '運営・費用なし' : esc(h.role) + '・場所代500円'}）</option>`).join('')}
+                  ${hosts.map((h) => `<option value="${esc(h.id)}" ${h.id === f.hostId ? 'selected' : ''}>${esc(h.name)}（${h.staff ? '運営・費用なし' : esc(h.role) + '・場所代のみ'}）</option>`).join('')}
                 </select>
-                ${hosts.some((h) => !h.staff) ? '' : '<p class="hint">名簿の「区分」を「LQメンバー」にすると、ここに表示されます。</p>'}
+                <p class="hint">公式LINEを友だち追加した人（名簿にいる人）から選べます。一般の方もホストになれます。</p>
               </label>
-              <p class="hint" style="margin-top:-6px;margin-bottom:12px">${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは参加者として登録され、人数に数えます（場所代500円）。'}</p>
+              <p class="hint" style="margin-top:-6px;margin-bottom:12px">${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは参加費なし・場所代のみで参加者として登録され、人数に数えます。'}</p>
               <label class="field"><span>型<span class="req">必須</span></span>
                 <select id="f-format">
                   ${f.format ? '' : '<option value="" selected>選んでください</option>'}
@@ -150,14 +146,15 @@
                 <textarea id="f-idea" rows="6" placeholder="思いつくままに、たらたら書いてOK。例）人の目を気にして疲れちゃう人と、痛みと願いカードで自分の願いを見つける時間にしたい">${esc(f.idea)}</textarea></label>
               <div class="row">
                 <label class="field"><span>開催日<span class="req">必須</span></span><input type="date" id="f-date" min="${minDate()}" value="${esc(f.date)}"></label>
-                <label class="field"><span>開始時間<span class="req">必須</span>（${c.duration}時間）</span>
+                <label class="field"><span>開始時間<span class="req">必須</span>（本編${c.core}時間＋${c.duration - c.core}時間）</span>
                   <select id="f-start">${times.map((t) => `<option ${t === f.start ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
               </div>
               <p class="hint" id="f-timeinfo" style="margin-top:-6px;margin-bottom:12px"></p>
               <div class="row">
                 <label class="field"><span>場所<span class="req">必須</span></span><input type="text" id="f-venue" value="${esc(f.venue)}"></label>
-                <label class="field"><span>定員（ホスト含む）<span class="req">必須</span></span><input type="number" id="f-max" min="${c.minTotal}" max="30" value="${esc(f.max)}"></label>
+                <label class="field"><span>定員（ホスト含む）<span class="req">必須</span></span><input type="number" id="f-max" min="1" max="30" value="${esc(f.max)}"></label>
               </div>
+              ${isOtherVenue(f) ? `<label class="field"><span>場所代の合計（円）<span class="req">必須</span></span><input type="number" id="f-venuefee" min="0" step="10" value="${esc(f.venueFeeTotal)}"><span class="hint" style="display:block;font-weight:400">運営以外の参加者（ホスト含む）で割り勘します。無料なら0。</span></label>` : `<p class="hint" style="margin-top:-6px;margin-bottom:12px">場所代：1人${yen(c.fees.venue)}（運営以外）。別の場所を入れると、場所代の合計を割り勘にできます。</p>`}
               <button class="btn block" id="f-gen">${S.generating ? '<span class="spinner" style="width:18px;height:18px;margin:0;border-width:2px"></span> AIが木陰の言葉を紡いでいます…' : '✨ AIで文章をつくる'}</button>
             </div>
 
@@ -191,7 +188,7 @@
 
             <div class="card">
               <h3>④ 公開して募集をはじめる</h3>
-              <p class="meta">公開すると申込画面に並び、${c.daysBefore}日前の${c.hour}時に申込を締め切り、「合計${c.minTotal}名以上・一般${c.minGuest}名以上」で開催かどうかが自動で決まります。${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは自動で参加者に登録されます（場所代500円）。'}</p>
+              <p class="meta">公開すると申込画面に並びます。人数に関係なく開催し（ホストだけでもOK）、当日の開始時刻まで申し込めます。${c.noticeDays}日前の${c.noticeHour}時に、運営へ人数をLINEでお知らせします。${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは自動で参加者に登録されます（参加費なし・場所代のみ）。'}</p>
               <ul class="hint" id="f-missing" style="color:var(--warn)"></ul>
               <button class="btn block" id="f-publish">公開して募集開始</button>
             </div>
@@ -202,6 +199,8 @@
       syncForm();
       redraw();
     }
+
+    function isOtherVenue(f) { return (f.venue || '').trim() !== '' && f.venue.trim() !== S.data.config.venue; }
 
     function isStaffHost(f) {
       const h = S.data.hosts.find((x) => x.id === f.hostId);
@@ -217,6 +216,7 @@
       f.date = $('#f-date').value;
       f.start = $('#f-start').value;
       f.venue = $('#f-venue').value.trim();
+      if ($('#f-venuefee')) f.venueFeeTotal = $('#f-venuefee').value;
       f.max = Number($('#f-max').value);
       f.title = $('#f-title').value.trim();
       f.description = $('#f-desc').value.trim();
@@ -231,10 +231,11 @@
       else if (fmtOf(f).work && fmtOf(f).work.required && !f.workTitle) miss.push(['#f-work', fmtOf(f).work.label]);
       if (!f.idea.trim()) miss.push(['#f-idea', '企画のテーマ・想い']);
       if (!f.date) miss.push(['#f-date', '開催日']);
-      else if (f.date < minDate()) miss.push(['#f-date', `開催日（${S.data.config.daysBefore}日前の判定が過ぎない日付に）`]);
+      else if (f.date < minDate()) miss.push(['#f-date', '開催日（今日以降に）']);
       if (!f.start) miss.push(['#f-start', '開始時間']);
       if (!f.venue) miss.push(['#f-venue', '場所']);
-      if (!f.max || f.max < S.data.config.minTotal) miss.push(['#f-max', `定員（${S.data.config.minTotal}名以上）`]);
+      if (!f.max || f.max < 1) miss.push(['#f-max', '定員（1名以上）']);
+      if (isOtherVenue(f) && String(f.venueFeeTotal).trim() === '') miss.push(['#f-venuefee', '場所代の合計']);
       if (!f.title) miss.push(['#f-title', 'タイトル']);
       if (!f.description) miss.push(['#f-desc', '案内文']);
       return miss;
@@ -244,7 +245,7 @@
       readForm();
       const f = S.form;
       const c = S.data.config;
-      $('#f-timeinfo').textContent = f.date ? `${dateLabel(f.date)} ${f.start}〜${addHours(f.start, c.duration)}（前半2時間コアタイム＋後半1時間フリータイム）` : '';
+      $('#f-timeinfo').textContent = f.date ? `${dateLabel(f.date)} ${f.start}〜${addHours(f.start, c.duration)}（本編2時間＋感想の投稿・フリートーク1時間）` : '';
       $('#f-caption').value = fullCaption(f);
       const miss = missingFields();
       $$('.invalid').forEach((el) => el.classList.remove('invalid'));
@@ -289,6 +290,9 @@
       $('#f-host').addEventListener('change', () => { readForm(); renderCreate(); });
       $('#f-format').addEventListener('change', () => { readForm(); renderCreate(); });
       if ($('#f-work')) ['input', 'change'].forEach((t) => $('#f-work').addEventListener(t, () => { syncForm(); redraw(); }));
+      // 場所を変えたら、割り勘の欄を出し入れする
+      $('#f-venue').addEventListener('change', () => { readForm(); renderCreate(); });
+      if ($('#f-venuefee')) ['input', 'change'].forEach((t) => $('#f-venuefee').addEventListener(t, () => syncForm()));
       ['#f-idea', '#f-date', '#f-start', '#f-venue', '#f-max', '#f-title', '#f-desc', '#f-body'].forEach((sel) => {
         $(sel).addEventListener('input', () => { syncForm(); redraw(); });
         $(sel).addEventListener('change', () => { syncForm(); redraw(); });
@@ -353,11 +357,10 @@
       const btn = $('#f-publish'); btn.disabled = true; btn.textContent = '公開しています…';
       try {
         const res = await api('admin.createEvent', {
-          hostId: f.hostId, format: f.format, workTitle: f.workTitle, idea: f.idea, date: f.date, start: f.start, venue: f.venue, max: f.max,
-          title: f.title, description: f.description, caption: fullCaption(f), sourceEventId: f.sourceEventId
+          hostId: f.hostId, format: f.format, workTitle: f.workTitle, idea: f.idea, date: f.date, start: f.start, venue: f.venue, venueFeeTotal: f.venueFeeTotal, max: f.max,
+          title: f.title, description: f.description, caption: fullCaption(f)
         });
         S.published = res;
-        S.form.sourceEventId = ''; S.form.sourceTitle = '';
         toast('公開しました🌿');
         S.data = await api('admin.overview');
         renderCreate();
@@ -370,14 +373,14 @@
 
     // ---------- イベント一覧 ----------
     function badge(status) {
-      const cls = { '開催決定': 'go', '中止': 'cancel', '終了': 'done' }[status] || '';
+      const cls = { '終了': 'done' }[status] || '';
       return `<span class="badge ${cls}">${esc(status)}</span>`;
     }
 
     function renderEvents() {
       const d = S.data;
       const today = localIso(new Date());
-      const list = d.events.filter((e) => S.eventFilter === 'all' || e.date >= today || e.status === '募集中' || e.status === '開催決定');
+      const list = d.events.filter((e) => S.eventFilter === 'all' || e.date >= today || e.status === '募集中');
       $('#app').innerHTML = `
         <div class="toolbar" style="margin-bottom:14px">
           <div class="seg" style="margin:0">
@@ -392,31 +395,29 @@
       $$('[data-f]').forEach((b) => b.addEventListener('click', () => { S.eventFilter = b.dataset.f; renderEvents(); }));
       $('#reload').addEventListener('click', reload);
       $$('[data-copy]').forEach((b) => b.addEventListener('click', () => copy(b.dataset.copy, 'コピーしました')));
-      $$('[data-replan]').forEach((b) => b.addEventListener('click', () => replan(b.dataset.replan)));
+      $$('[data-copyevent]').forEach((b) => b.addEventListener('click', () => copyEvent(b.dataset.copyevent)));
     }
 
     function eventAdminCard(ev) {
       const c = ev.counts;
       const cfg = S.data.config;
-      const okTotal = c.total >= cfg.minTotal, okGuest = c.guests >= cfg.minGuest;
       const regs = ev.registrations;
       const sales = regs.filter((r) => r.status === '申込').reduce((s, r) => s + r.fee, 0);
       return `
         <article class="card">
-          <div class="badges">${badge(ev.status)}${ev.sourceEventId ? '<span class="badge">再企画</span>' : ''}</div>
+          <div class="badges">${badge(ev.status)}${ev.format !== 'other' && ev.formatLabel ? `<span class="badge">${esc(ev.formatLabel)}</span>` : ''}</div>
           <h3>${esc(ev.title)}</h3>
           <div class="meta">
             <div>📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}　📍 ${esc(ev.venue)}</div>
             <div>🌿 ホスト：${esc(ev.host || 'なし')}　／　定員 ${ev.max}名</div>
-            ${ev.status === '募集中' ? `<div>⏰ 開催判定：${esc(ev.decisionLabel)}</div>` : ''}
+            ${ev.venueSplit ? `<div>💴 場所代 合計${yen(ev.venueFeeTotal)}を割り勘（いまの人数で1人${yen(ev.counts.total ? Math.ceil(ev.venueFeeTotal / ev.counts.total / 10) * 10 : ev.venueFeeTotal)}）</div>` : ''}
+            ${ev.status === '募集中' ? `<div>⏰ 運営への人数のお知らせ：${esc(ev.noticeLabel)}${ev.noticeSent ? '（送信済み）' : ''}</div>` : ''}
           </div>
           <div class="counts">
-            合計 <b>${c.total}</b>名 ${okTotal ? '✅' : `（あと${cfg.minTotal - c.total}名）`}
-            一般 <b>${c.guests}</b>名 ${okGuest ? '✅' : `（あと${cfg.minGuest - c.guests}名）`}
-            メンバー ${c.members}名　／　当日集金予定 ${yen(sales)}
+            合計 <b>${c.total}</b>名　一般 <b>${c.guests}</b>名　仲間・ホスト ${c.members}名（運営は含まない）　／　当日集金予定 ${yen(sales)}
           </div>
           <div class="copy-row" style="margin-bottom:8px"><input type="text" readonly value="${esc(ev.link)}"><button class="btn small ghost" data-copy="${esc(ev.link)}">申込リンク</button></div>
-          ${ev.status === '中止' ? `<button class="btn small" data-replan="${esc(ev.id)}">別日で再企画する</button>` : ''}
+          <button class="btn small ghost" data-copyevent="${esc(ev.id)}">同じ内容で別の日につくる</button>
           <details style="margin-top:8px"><summary>申込者（${regs.length}件）</summary>
             ${regs.length ? `<table class="regs"><thead><tr><th>名前</th><th>区分</th><th>当日</th><th>初回</th><th>シェア</th><th>紹介・きっかけ</th></tr></thead><tbody>
               ${regs.map((r) => `<tr class="${r.status === 'キャンセル' ? 'cancelled' : ''}"><td>${esc(r.name)}</td><td>${esc(r.type)}</td><td>${yen(r.fee)}</td><td>${r.first ? '○' : ''}</td><td>${r.share ? '○' : ''}</td><td>${esc(r.referrer)}</td></tr>`).join('')}
@@ -425,13 +426,13 @@
         </article>`;
     }
 
-    function replan(id) {
+    function copyEvent(id) {
       const ev = S.data.events.find((e) => e.id === id);
       if (!ev) return;
       S.form = Object.assign(blankForm(), {
-        hostId: ev.hostId || S.data.me.id, format: ev.format, workTitle: ev.workTitle || '', idea: ev.rawIdea || '', venue: ev.venue, max: ev.max, start: ev.start,
-        title: ev.title, description: ev.description, body: String(ev.caption || '').split('──────────')[0].trim(),
-        sourceEventId: ev.id, sourceTitle: ev.title
+        hostId: ev.hostId || S.data.me.id, format: ev.format, workTitle: ev.workTitle || '', idea: ev.rawIdea || '', venue: ev.venue,
+        venueFeeTotal: ev.venueSplit ? String(ev.venueFeeTotal) : '', max: ev.max, start: ev.start,
+        title: ev.title, description: ev.description, body: String(ev.caption || '').split('──────────')[0].trim()
       });
       S.published = null;
       S.tab = 'create';

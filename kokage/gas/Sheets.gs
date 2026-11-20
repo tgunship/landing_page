@@ -33,15 +33,14 @@ var TABLES = {
       ['caption', 'インスタ投稿文'],
       ['raw_idea', '企画の想い（元の文章）'],
       ['venue', '場所'],
+      ['venue_fee_total', '場所代合計（別会場）'],
       ['max_participants', '定員'],
       ['host_user_id', 'ホストのLINEユーザーID'],
       ['host_name', 'ホスト'],
-      ['source_event_id', '再企画元イベントID'],
       ['created_by', '作成者'],
       ['created_at', '作成日時'],
-      ['decided_at', '開催判定日時'],
-      ['thanks_sent_at', 'お礼送信日時'],
-      ['revenge_sent_at', '特別ご案内送信日時']
+      ['decided_at', '人数お知らせ日時'],
+      ['thanks_sent_at', 'お礼送信日時']
     ]
   },
   registrations: {
@@ -59,6 +58,7 @@ var TABLES = {
       ['referrer', '紹介者'],
       ['agreed_rules', 'ルール同意'],
       ['fee', '当日お支払い'],
+      ['venue_fee', 'うち場所代'],
       ['status', '状態'],
       ['created_at', '申込日時'],
       ['cancelled_at', 'キャンセル日時']
@@ -88,7 +88,7 @@ var TABLES = {
 };
 
 // 文字列のまま保存したい列（日付や時刻が勝手に変換されないように）
-var NUMBER_COLUMNS = { fee: true, max_participants: true };
+var NUMBER_COLUMNS = { fee: true, venue_fee: true, max_participants: true, venue_fee_total: true };
 
 function getSpreadsheet_() {
   var id = prop('SPREADSHEET_ID');

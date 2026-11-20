@@ -7,7 +7,7 @@ function onOpen() {
     .addItem('② 定期実行をオンにする', 'installTriggers')
     .addItem('設定チェック', 'checkSettings')
     .addSeparator()
-    .addItem('今すぐ開催判定・終了処理を実行', 'cronTick')
+    .addItem('今すぐ定期処理（人数のお知らせ・お礼・終了）を実行', 'cronTick')
     .addToUi();
 }
 
@@ -40,14 +40,14 @@ function setupSheets() {
     });
 
     // プルダウン（手で書き換えるときの入力ミス防止）
-    if (key === 'users') setDropdown_(sheet, idx.role, [ROLE_LABEL.guest, ROLE_LABEL.member, ROLE_LABEL.iq]);
+    if (key === 'users') setDropdown_(sheet, idx.role, [ROLE_LABEL.guest, ROLE_LABEL.iq]);
     if (key === 'events') {
-      setDropdown_(sheet, idx.status, [EVENT_STATUS.OPEN, EVENT_STATUS.GO, EVENT_STATUS.CANCELLED, EVENT_STATUS.DONE]);
+      setDropdown_(sheet, idx.status, [EVENT_STATUS.OPEN, EVENT_STATUS.DONE]);
       setDropdown_(sheet, idx.format, FORMATS.map(function (f) { return f.label; }));
     }
     if (key === 'registrations') {
       setDropdown_(sheet, idx.status, [REG_STATUS.ACTIVE, REG_STATUS.CANCELLED]);
-      setDropdown_(sheet, idx.type, [REG_TYPE.HOST, REG_TYPE.MEMBER, REG_TYPE.IQ, REG_TYPE.GUEST]);
+      setDropdown_(sheet, idx.type, [REG_TYPE.HOST, REG_TYPE.IQ, REG_TYPE.GUEST]);
     }
   });
 

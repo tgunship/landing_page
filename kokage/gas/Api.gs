@@ -63,12 +63,12 @@ function withLock_(fn) {
 
 function publicEvent_(ev, regs, userId) {
   var cfg = getConfig();
-  var decision = decisionTimeOf(ev, cfg);
   var counts = countParticipants(ev.event_id, regs);
-  var max = Number(ev.max_participants) || getConfig().DEFAULT_MAX_PARTICIPANTS;
+  var max = Number(ev.max_participants) || cfg.DEFAULT_MAX_PARTICIPANTS;
   var mine = regs.filter(function (r) {
     return r.event_id === ev.event_id && r.line_user_id === userId && r.status === REG_STATUS.ACTIVE;
   })[0];
+  var f = findFormat(ev.format);
   return {
     id: ev.event_id,
     status: ev.status,
@@ -78,19 +78,28 @@ function publicEvent_(ev, regs, userId) {
     end: ev.end_time,
     title: ev.title,
     description: ev.description,
-    format: (findFormat(ev.format) || {}).key || 'other',
-    formatLabel: (findFormat(ev.format) || {}).label || '',
+    format: (f || {}).key || 'other',
+    formatLabel: (f || {}).label || '',
     workTitle: ev.work_title,
     workLine: workLine(ev),
     venue: ev.venue,
+    venueSplit: isSplitVenue(ev),
+    venueFeeTotal: Number(ev.venue_fee_total) || 0,
+    // 新しく申し込んだ場合の1人あたり場所代（割り勘なら人数が1人増えた計算）
+    venueShareIfJoin: venueShare(ev, counts.total + (mine ? 0 : 1), cfg),
     host: ev.host_name,
     max: max,
     counts: counts,
     remaining: Math.max(0, max - counts.total),
     canApply: isOpenForApply(ev, new Date()),
-    decisionLabel: decision ? formatJpDate(Utilities.formatDate(decision, 'Asia/Tokyo', 'yyyy-MM-dd')) + ' ' + Utilities.formatDate(decision, 'Asia/Tokyo', 'HH:mm') : '',
     mine: mine ? { fee: Number(mine.fee) || 0, type: mine.type, share: toBool(mine.share_declared) } : null
   };
+}
+
+/** 申込状況タブを見られるか：運営・IQ受講生・募集中の回のホスト */
+function canSeeStatus_(ctx, events) {
+  if (isAdmin(ctx.userId) || normalizeRole(ctx.user.role) === ROLE.IQ) return true;
+  return events.some(function (ev) { return ev.status === EVENT_STATUS.OPEN && ev.host_user_id === ctx.userId; });
 }
 
 function apiInit_(ctx) {
@@ -111,12 +120,13 @@ function apiInit_(ctx) {
       role: role,
       roleLabel: ROLE_LABEL[role],
       isAdmin: isAdmin(ctx.userId),
-      canSeeStatus: isAdmin(ctx.userId) || role === ROLE.MEMBER,
+      canSeeStatus: canSeeStatus_(ctx, events),
       firstTime: role === ROLE.GUEST ? isFirstTimeGuest(ctx.userId, regs, eventsById_(events), null) : false
     },
     fees: {
       venue: cfg.VENUE_FEE, first: cfg.GUEST_FIRST_FEE, regular: cfg.GUEST_REGULAR_FEE, discount: cfg.ACTION_DISCOUNT_AMOUNT
     },
+    rules: GROUND_RULES,
     instagramUrl: cfg.INSTAGRAM_URL,
     events: list
   };
@@ -128,8 +138,7 @@ function apiApply_(ctx, body) {
   if (isAdmin(ctx.userId)) throw new Error('運営の方は申し込み不要です（人数に数えません）');
   if (!body.agreed) throw new Error('木陰のグランドルールへの同意が必要です');
 
-  var evTable = table_('events');
-  var events = evTable.all();
+  var events = table_('events').all();
   var ev = events.filter(function (e) { return e.event_id === body.eventId; })[0];
   if (!ev) throw new Error('イベントが見つかりません');
   if (!isOpenForApply(ev, now)) throw new Error('この木陰はいまは申し込みを受け付けていません');
@@ -146,7 +155,8 @@ function apiApply_(ctx, body) {
   var type = regTypeForRole(role);
   var first = role === ROLE.GUEST ? isFirstTimeGuest(ctx.userId, regs, eventsById_(events), ev.event_id) : false;
   var share = role === ROLE.GUEST && !!body.shareDeclared;
-  var fee = calcFee({ role: role, isFirstTime: first, shareDeclared: share }, cfg);
+  var p = participationFee({ role: role, isFirstTime: first, shareDeclared: share }, cfg);
+  var venueFee = venueShare(ev, counts.total + 1, cfg);
 
   var reg = {
     event_id: ev.event_id,
@@ -159,7 +169,8 @@ function apiApply_(ctx, body) {
     share_declared: boolLabel(share),
     referrer: String(body.referrer || '').slice(0, 100),
     agreed_rules: boolLabel(true),
-    fee: fee.total,
+    fee: p.fee + venueFee,
+    venue_fee: venueFee,
     status: REG_STATUS.ACTIVE,
     created_at: nowStamp_(),
     cancelled_at: ''
@@ -173,13 +184,15 @@ function apiApply_(ctx, body) {
     regTable.append(reg);
   }
 
-  // 開催決定後の追加申込は、運営とホストへお知らせ（会場予約の人数が変わるため）
-  var afterApply = countParticipants(ev.event_id, regTable.all());
-  if (ev.status === EVENT_STATUS.GO) notifyHost_('apply', ev, ctx.name, afterApply);
+  // 別会場の割り勘は人数で変わるので、同じ回のほかの人の金額も整える
+  if (isSplitVenue(ev)) refreshFees_();
+
+  var after = countParticipants(ev.event_id, table_('registrations').all());
+  if (ev.decided_at) notifyHost_('apply', ev, ctx.name, after);
 
   return {
     ok: true,
-    fee: fee,
+    fee: { total: p.fee + venueFee, participation: p.fee, venue: venueFee, split: isSplitVenue(ev) },
     type: type,
     triggerText: buildTriggerText('apply', ev.event_id, ev),
     instagramUrl: cfg.INSTAGRAM_URL
@@ -200,11 +213,11 @@ function apiCancel_(ctx, body) {
   if (!reg) throw new Error('お申し込みが見つかりません');
   regTable.update(reg._row, { status: REG_STATUS.CANCELLED, cancelled_at: nowStamp_() });
 
-  // キャンセルした回が「初回」だった場合、次の申込を自動で初回料金に戻す
-  var changes = recomputeFirstTime_([ctx.userId]);
+  // キャンセルした回が「初回」だった場合は次の申込を初回料金に戻す。割り勘の金額も整える
+  var changes = refreshFees_().filter(function (c) { return c.userId === ctx.userId && c.becameFirst; });
 
-  var afterCancel = countParticipants(ev.event_id, regTable.all());
-  if (ev.status === EVENT_STATUS.GO) notifyHost_('cancel', ev, ctx.name, afterCancel);
+  var after = countParticipants(ev.event_id, table_('registrations').all());
+  if (ev.decided_at) notifyHost_('cancel', ev, ctx.name, after);
   return {
     ok: true,
     triggerText: buildTriggerText('cancel', ev.event_id, ev),
@@ -214,11 +227,11 @@ function apiCancel_(ctx, body) {
 
 /**
  * LINEアプリの外（パソコンのブラウザ等）で申し込んだため、合図のメッセージを公式LINEへ送れなかったとき。
- * 開催決定済みの回だけは会場予約に関わるので、運営へ Push で知らせる（めったに起きない）。
+ * 人数のお知らせ後の回だけは会場予約に関わるので、運営へ Push で知らせる（めったに起きない）。
  */
 function apiTriggerFailed_(ctx, body) {
   var ev = table_('events').all().filter(function (e) { return e.event_id === body.eventId; })[0];
-  if (!ev || ev.status !== EVENT_STATUS.GO) return { ok: true, notified: false };
+  if (!ev || !ev.decided_at || ev.status !== EVENT_STATUS.OPEN) return { ok: true, notified: false };
   var kind = body.kind === 'cancel' ? 'cancel' : 'apply';
   var regs = table_('registrations').all();
   var mine = regs.filter(function (r) {
@@ -226,8 +239,8 @@ function apiTriggerFailed_(ctx, body) {
       r.status === (kind === 'cancel' ? REG_STATUS.CANCELLED : REG_STATUS.ACTIVE);
   })[0];
   if (!mine) return { ok: true, notified: false };
-  pushToAdmins_(buildAdminChangeMessage(kind, ev, ctx.name, countParticipants(ev.event_id, regs), false),
-    { kind: kind === 'cancel' ? '管理者:キャンセル' : '管理者:追加申込', eventId: ev.event_id });
+  pushToAdmins_(buildChangeMessage(kind, ev, ctx.name, countParticipants(ev.event_id, regs), false),
+    { kind: kind === 'cancel' ? '管理者:キャンセル' : '管理者:申込', eventId: ev.event_id });
   return { ok: true, notified: true };
 }
 
@@ -248,37 +261,39 @@ function callName_(u) {
 }
 
 /**
- * 開催決定後の追加申込・キャンセルを、ホスト（LQメンバーの場合）へ Push。
- * 運営へは Push しない：参加者のトークから公式LINEへ届く合図のメッセージ（日付・タイトル・人数入り）を
- * 公式LINEの受信箱で確認する（無料）。
+ * 人数のお知らせ後の申込・キャンセルを、ホスト（運営以外の場合）へ Push。
+ * 運営へは Push しない：参加者のトークから公式LINEへ届く合図のメッセージを受信箱で確認する（無料）。
  */
 function notifyHost_(kind, ev, name, counts) {
   if (ev.host_user_id && !isAdmin(ev.host_user_id)) {
-    push_(ev.host_user_id, buildAdminChangeMessage(kind, ev, name, counts, true),
-      { kind: kind === 'cancel' ? 'ホスト:キャンセル' : 'ホスト:追加申込', eventId: ev.event_id, name: ev.host_name });
+    push_(ev.host_user_id, buildChangeMessage(kind, ev, name, counts, true),
+      { kind: kind === 'cancel' ? 'ホスト:キャンセル' : 'ホスト:申込', eventId: ev.event_id, name: ev.host_name });
   }
 }
 
 /**
  * 申込状況
- *  - LQメンバー：「募集中」「開催決定」の回だけ。名前と参加区分のみ（料金・紹介者は見せない）
  *  - 運営：すべての回・すべての項目
+ *  - IQ受講生：「募集中」の回。名前と参加区分のみ（料金・紹介者は見せない）
+ *  - 一般のホスト：自分がホストの「募集中」の回だけ。名前と参加区分のみ
  */
 function apiStatus_(ctx) {
   var admin = isAdmin(ctx.userId);
-  var role = normalizeRole(ctx.user.role);
-  if (!admin && role !== ROLE.MEMBER) throw new Error('ライフクエストのメンバーと運営だけが見られます');
-  var cfg = getConfig();
+  var iq = normalizeRole(ctx.user.role) === ROLE.IQ;
+  var events = table_('events').all();
+  if (!canSeeStatus_(ctx, events)) throw new Error('IQ受講生・ホスト・運営だけが見られます');
   var regs = table_('registrations').all();
-  var list = table_('events').all()
-    .filter(function (ev) { return admin || ev.status === EVENT_STATUS.OPEN || ev.status === EVENT_STATUS.GO; })
+  var list = events
+    .filter(function (ev) {
+      if (admin) return true;
+      if (ev.status !== EVENT_STATUS.OPEN) return false;
+      return iq || ev.host_user_id === ctx.userId;
+    })
     .sort(function (a, b) { return (eventStart(a) || 0) - (eventStart(b) || 0); });
   if (admin) list = list.slice(-60);
   return {
     ok: true,
     admin: admin,
-    minTotal: cfg.MIN_TOTAL_PARTICIPANTS,
-    minGuest: cfg.MIN_GUEST_PARTICIPANTS,
     events: list.map(function (ev) {
       var base = publicEvent_(ev, regs, ctx.userId);
       base.isHost = ev.host_user_id === ctx.userId;
@@ -301,31 +316,26 @@ function apiAdminOverview_(ctx) {
   var events = table_('events').all();
   var regs = table_('registrations').all();
   var users = table_('users').all();
-  // ホスト候補：運営（費用なし・数えない）を先頭に、LQメンバー・IQ受講生
+  // ホスト候補：運営（費用なし・数えない）→ IQ受講生 → 一般
   var staff = users.filter(function (u) { return isAdmin(u.line_user_id); })
     .sort(function (a, b) { return (b.line_user_id === ctx.userId) - (a.line_user_id === ctx.userId); })
     .map(function (u) { return { id: u.line_user_id, name: callName_(u), role: '運営', staff: true }; });
-  var hosts = staff.concat(users
-    .filter(function (u) {
-      if (isAdmin(u.line_user_id)) return false;
-      var r = normalizeRole(u.role);
-      return r === ROLE.MEMBER || r === ROLE.IQ;
-    })
-    .map(function (u) {
-      return { id: u.line_user_id, name: callName_(u), role: ROLE_LABEL[normalizeRole(u.role)], staff: false };
-    }));
+  var others = users.filter(function (u) { return u.line_user_id && !isAdmin(u.line_user_id); })
+    .map(function (u) { return { id: u.line_user_id, name: callName_(u), role: ROLE_LABEL[normalizeRole(u.role)], staff: false }; })
+    .sort(function (a, b) { return (a.role === ROLE_LABEL.iq ? 0 : 1) - (b.role === ROLE_LABEL.iq ? 0 : 1); });
+  var hosts = staff.concat(others);
 
   var list = events
     .sort(function (a, b) { return (eventStart(b) || 0) - (eventStart(a) || 0); })
     .slice(0, 60)
     .map(function (ev) {
       var base = publicEvent_(ev, regs, '');
-      var decision = decisionTimeOf(ev, cfg);
-      base.decisionLabel = decision ? Utilities.formatDate(decision, 'Asia/Tokyo', 'M/d HH:mm') : '';
+      var notice = noticeTimeOf(ev, cfg);
+      base.noticeLabel = notice ? Utilities.formatDate(notice, 'Asia/Tokyo', 'M/d HH:mm') : '';
+      base.noticeSent = !!ev.decided_at;
       base.hostId = ev.host_user_id;
       base.caption = ev.caption;
       base.rawIdea = ev.raw_idea;
-      base.sourceEventId = ev.source_event_id;
       base.link = entryLink(ev.event_id);
       base.registrations = regs
         .filter(function (r) { return r.event_id === ev.event_id; })
@@ -346,8 +356,8 @@ function apiAdminOverview_(ctx) {
     ok: true,
     me: { name: ctx.name, id: ctx.userId },
     config: {
-      minTotal: cfg.MIN_TOTAL_PARTICIPANTS, minGuest: cfg.MIN_GUEST_PARTICIPANTS,
-      daysBefore: cfg.GO_NOGO_DAYS_BEFORE, hour: cfg.GO_NOGO_HOUR, duration: cfg.EVENT_DURATION_HOURS,
+      noticeDays: cfg.NOTICE_DAYS_BEFORE, noticeHour: cfg.NOTICE_HOUR,
+      core: cfg.CORE_HOURS, duration: cfg.EVENT_DURATION_HOURS,
       venue: cfg.DEFAULT_VENUE, start: cfg.DEFAULT_START_TIME, max: cfg.DEFAULT_MAX_PARTICIPANTS,
       fees: { venue: cfg.VENUE_FEE, first: cfg.GUEST_FIRST_FEE, regular: cfg.GUEST_REGULAR_FEE, discount: cfg.ACTION_DISCOUNT_AMOUNT },
       instagramHandle: cfg.INSTAGRAM_HANDLE, entryLink: entryLink()
@@ -376,7 +386,15 @@ function apiAdminCreate_(ctx, body) {
   var fmt = findFormat(body.format);
   if (!fmt) throw new Error('型を選んでください');
   if (fmt.work && fmt.work.required && !String(body.workTitle || '').trim()) throw new Error(fmt.work.label + 'を入力してください');
-  if (max < cfg.MIN_TOTAL_PARTICIPANTS) throw new Error('定員は最小催行人数（' + cfg.MIN_TOTAL_PARTICIPANTS + '名）以上にしてください');
+  if (max < 1) throw new Error('定員は1名以上にしてください');
+
+  // 別会場の場合は、場所代の合計を運営以外の参加者で割り勘
+  var venueFeeTotal = '';
+  if (venue !== cfg.DEFAULT_VENUE) {
+    var t = String(body.venueFeeTotal == null ? '' : body.venueFeeTotal).trim();
+    if (t === '' || isNaN(Number(t)) || Number(t) < 0) throw new Error('別会場の場所代（合計）を入力してください（無料なら0）');
+    venueFeeTotal = Math.round(Number(t));
+  }
 
   var ev = {
     event_id: newId_('E'),
@@ -388,94 +406,84 @@ function apiAdminCreate_(ctx, body) {
     description: description,
     caption: String(body.caption || ''),
     raw_idea: String(body.idea || ''),
-    format: (findFormat(body.format) || FORMATS[FORMATS.length - 1]).label,
+    format: fmt.label,
     work_title: String(body.workTitle || '').trim(),
     venue: venue,
+    venue_fee_total: venueFeeTotal,
     max_participants: max,
     host_user_id: '',
     host_name: '',
-    source_event_id: String(body.sourceEventId || ''),
     created_by: ctx.name,
     created_at: nowStamp_(),
     decided_at: '',
-    thanks_sent_at: '',
-    revenge_sent_at: ''
+    thanks_sent_at: ''
   };
-  var decision = decisionTimeOf(ev, cfg);
-  if (!decision || decision.getTime() <= Date.now()) {
-    throw new Error('開催判定（' + cfg.GO_NOGO_DAYS_BEFORE + '日前の' + cfg.GO_NOGO_HOUR + '時）がすでに過ぎている日付です。もっと先の日付を選んでください。');
-  }
+  var startAt = eventStart(ev);
+  if (!startAt || startAt.getTime() <= Date.now()) throw new Error('開始時刻が過ぎています。これからの日時を選んでください。');
 
   if (!body.hostId) throw new Error('ホストを選んでください');
   var hostUser = findUser_(body.hostId);
   if (!hostUser) throw new Error('ホストが名簿に見つかりません');
   ev.host_user_id = hostUser.line_user_id;
   ev.host_name = callName_(hostUser);
+
+  table_('events').append(ev);
+
   // 運営（うってぃ・ぎっしー）がホスト：費用なし・申込シートに登録しない・人数に数えない
-  // LQメンバー・IQ受講生がホスト：場所代500円で参加者として登録
-  var host = isAdmin(hostUser.line_user_id) ? null : hostUser;
-
-  var evTable = table_('events');
-  evTable.append(ev);
-
-  if (host) {
-    var role = normalizeRole(host.role);
-    var fee = calcFee({ role: role === ROLE.GUEST ? ROLE.MEMBER : role, isFirstTime: false, shareDeclared: false }, cfg);
+  // それ以外（IQ受講生・一般）がホスト：参加費なし・場所代のみで参加者として登録
+  if (!isAdmin(hostUser.line_user_id)) {
+    var venueFee = venueShare(ev, 1, cfg);
     table_('registrations').append({
       reg_id: newId_('R'), event_id: ev.event_id, event_title: ev.title, event_date: ev.date,
-      line_user_id: host.line_user_id, display_name: callName_(host), type: REG_TYPE.HOST,
+      line_user_id: hostUser.line_user_id, display_name: callName_(hostUser), type: REG_TYPE.HOST,
       first_time: '', share_declared: boolLabel(false), referrer: '', agreed_rules: boolLabel(true),
-      fee: fee.total, status: REG_STATUS.ACTIVE, created_at: nowStamp_(), cancelled_at: ''
+      fee: venueFee, venue_fee: venueFee, status: REG_STATUS.ACTIVE, created_at: nowStamp_(), cancelled_at: ''
     });
   }
 
-  // 別日で再企画：前回申し込んでくれた一般の方へ特別ご案内（Push）
-  var invited = 0;
-  if (ev.source_event_id) {
-    var seen = {};
-    table_('registrations').all().filter(function (r) {
-      return r.event_id === ev.source_event_id && r.status === REG_STATUS.ACTIVE && isGuestType(r.type);
-    }).forEach(function (r) {
-      if (seen[r.line_user_id]) return;
-      seen[r.line_user_id] = true;
-      if (push_(r.line_user_id, buildRevengeMessage(r.display_name, ev, entryLink(ev.event_id)),
-        { kind: '特別ご案内', eventId: ev.event_id, name: r.display_name })) invited++;
-    });
-    var rows = evTable.all().filter(function (e) { return e.event_id === ev.event_id; });
-    if (rows[0]) evTable.update(rows[0]._row, { revenge_sent_at: nowStamp_() });
-  }
-
-  return { ok: true, eventId: ev.event_id, link: entryLink(ev.event_id), invited: invited };
+  return { ok: true, eventId: ev.event_id, link: entryLink(ev.event_id) };
 }
 
 /**
- * 一般参加者の「初回」料金を割り当て直す（中止・キャンセルで初回が空いたら次の申込を初回に戻す）。
- * 料金を変えるのは「募集中」の回だけ（開催決定のお知らせ後に金額が変わらないように）。
- * userIds を省略すると全員を見直す。戻り値：料金が変わった申込の一覧
+ * 「募集中」の回の料金を整える。
+ *  - 一般の「初回」：有効な申込のうち最初の1件だけ（キャンセルで空いたら次の申込が初回に戻る）
+ *  - 別会場の場所代：いまの人数で割り勘
+ * 変わった行だけ書き換える（手で直した金額は、初回・場所代が変わらない限りそのまま）。
+ * 戻り値：変わった申込の一覧（becameFirst=初回料金に戻ったもの）
  */
-function recomputeFirstTime_(userIds) {
+function refreshFees_() {
   var cfg = getConfig();
   var regTable = table_('registrations');
   var regs = regTable.all();
   var byId = eventsById_(table_('events').all());
-  var targets = userIds || regs.filter(function (r) { return isGuestType(r.type); })
-    .map(function (r) { return r.line_user_id; })
-    .filter(function (id, i, arr) { return id && arr.indexOf(id) === i; });
+  var plans = {};
+  var counts = {};
   var changes = [];
-  targets.forEach(function (userId) {
-    var plan = firstTimeAssignments(userId, regs, byId);
-    regs.forEach(function (r) {
-      if (!(r.reg_id in plan)) return;
-      var ev = byId[r.event_id];
-      if (!ev || ev.status !== EVENT_STATUS.OPEN) return;
-      var first = plan[r.reg_id];
-      if (toBool(r.first_time) === first) return;
-      var fee = calcFee({ role: ROLE.GUEST, isFirstTime: first, shareDeclared: toBool(r.share_declared) }, cfg).total;
-      regTable.update(r._row, { first_time: boolLabel(first), fee: fee });
-      r.first_time = boolLabel(first);
-      r.fee = String(fee);
-      changes.push({ userId: userId, reg: r, event: ev, fee: fee, first: first });
-    });
+  regs.forEach(function (r) {
+    if (r.status !== REG_STATUS.ACTIVE) return;
+    var ev = byId[r.event_id];
+    if (!ev || ev.status !== EVENT_STATUS.OPEN) return;
+    var patch = {};
+    var becameFirst = false;
+    if (isGuestType(r.type)) {
+      plans[r.line_user_id] = plans[r.line_user_id] || firstTimeAssignments(r.line_user_id, regs, byId);
+      var first = !!plans[r.line_user_id][r.reg_id];
+      if (toBool(r.first_time) !== first) {
+        patch.first_time = boolLabel(first);
+        r.first_time = patch.first_time;
+        becameFirst = first;
+      }
+    }
+    if (!(r.event_id in counts)) counts[r.event_id] = countParticipants(r.event_id, regs).total;
+    var share = venueShare(ev, counts[r.event_id], cfg);
+    if (String(r.venue_fee) === '' || Number(r.venue_fee) !== share) patch.venue_fee = share;
+    if (!Object.keys(patch).length) return;
+    var fee = participationFeeOfReg(r, cfg) + share;
+    patch.fee = fee;
+    regTable.update(r._row, patch);
+    r.fee = String(fee);
+    r.venue_fee = String(share);
+    changes.push({ userId: r.line_user_id, reg: r, event: ev, fee: fee, becameFirst: becameFirst });
   });
   return changes;
 }

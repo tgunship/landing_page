@@ -3,20 +3,19 @@
  *
  * 数値の設定は、Apps Script の「プロジェクトの設定 → スクリプト プロパティ」に
  * 同じ名前で値を入れると、コードを書き換えずに上書きできます。
- *   例）MIN_TOTAL_PARTICIPANTS = 3 / MIN_GUEST_PARTICIPANTS = 1
  *
  * 秘密の値（トークン・APIキー）は必ずスクリプト プロパティに入れてください。コードには書かないこと。
  */
 var DEFAULT_CONFIG = {
-  MIN_TOTAL_PARTICIPANTS: 4,   // 最小催行人数（ホスト・メンバー・一般の合計。運営は数えない）
-  MIN_GUEST_PARTICIPANTS: 2,   // 最小催行の一般参加者数
-  GO_NOGO_DAYS_BEFORE: 3,      // 開催判定：開催日の何日前か
-  GO_NOGO_HOUR: 12,            // 開催判定：何時に判定するか
-  EVENT_DURATION_HOURS: 3,     // 1回の時間（前半2時間コアタイム＋後半1時間フリータイム）
+  // 最少人数の決まりはない（ホストだけでも開催）。中止の概念もない。
+  NOTICE_DAYS_BEFORE: 3,       // 運営への「人数のお知らせ」：開催日の何日前か（会場の予約・人数確認用）
+  NOTICE_HOUR: 12,             // 同：何時に送るか
+  CORE_HOURS: 2,               // 本編の時間（この後、感想の投稿・フリートーク）
+  EVENT_DURATION_HOURS: 3,     // 1回の時間（本編2時間＋投稿・フリートーク1時間）
   DEFAULT_START_TIME: '13:00',
   DEFAULT_VENUE: 'イバフォルニア・ベース',
   DEFAULT_MAX_PARTICIPANTS: 8, // 定員（ホストを含む。運営は含まない）
-  VENUE_FEE: 500,              // 場所代（全員）
+  VENUE_FEE: 500,              // イバフォルニア・ベースの場所代（1人。運営以外の全員）
   GUEST_FIRST_FEE: 1000,       // 一般・初回の参加費
   GUEST_REGULAR_FEE: 6000,     // 一般・2回目以降の参加費
   ACTION_DISCOUNT_AMOUNT: 1000,// 発信・口コミ（自己申告）割引
@@ -28,9 +27,8 @@ var DEFAULT_CONFIG = {
 };
 
 var NUMERIC_KEYS = [
-  'MIN_TOTAL_PARTICIPANTS', 'MIN_GUEST_PARTICIPANTS', 'GO_NOGO_DAYS_BEFORE', 'GO_NOGO_HOUR',
-  'EVENT_DURATION_HOURS', 'DEFAULT_MAX_PARTICIPANTS', 'VENUE_FEE', 'GUEST_FIRST_FEE',
-  'GUEST_REGULAR_FEE', 'ACTION_DISCOUNT_AMOUNT', 'PUSH_MONTHLY_LIMIT'
+  'NOTICE_DAYS_BEFORE', 'NOTICE_HOUR', 'CORE_HOURS', 'EVENT_DURATION_HOURS', 'DEFAULT_MAX_PARTICIPANTS',
+  'VENUE_FEE', 'GUEST_FIRST_FEE', 'GUEST_REGULAR_FEE', 'ACTION_DISCOUNT_AMOUNT', 'PUSH_MONTHLY_LIMIT'
 ];
 
 var _cfgCache = null;
