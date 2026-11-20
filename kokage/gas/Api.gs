@@ -80,11 +80,16 @@ function publicEvent_(ev, regs, userId) {
     description: ev.description,
     format: (f || {}).key || 'other',
     formatLabel: (f || {}).label || '',
+    series: seriesName(ev),
+    kicker: (f || {}).kicker || '',
     workTitle: ev.work_title,
     workLine: workLine(ev),
     venue: ev.venue,
     venueSplit: isSplitVenue(ev),
     venueFeeTotal: Number(ev.venue_fee_total) || 0,
+    venueFeeCap: Number(ev.venue_fee_cap) || 0,
+    venueShareNow: venueShare(ev, counts.total, cfg),
+    hostVenueFeeNow: hostVenueFee(ev, counts.total, cfg),
     // 新しく申し込んだ場合の1人あたり場所代（割り勘なら人数が1人増えた計算）
     venueShareIfJoin: venueShare(ev, counts.total + (mine ? 0 : 1), cfg),
     host: ev.host_name,
@@ -184,7 +189,7 @@ function apiApply_(ctx, body) {
     regTable.append(reg);
   }
 
-  // 別会場の割り勘は人数で変わるので、同じ回のほかの人の金額も整える
+  // 別会場の割り勘は人数で変わるので、同じ回のほかの人（ホストの負担を含む）の金額も整える
   if (isSplitVenue(ev)) refreshFees_();
 
   var after = countParticipants(ev.event_id, table_('registrations').all());
@@ -300,7 +305,7 @@ function apiStatus_(ctx) {
       base.registrations = regs.filter(function (r) {
         return r.event_id === ev.event_id && (admin || r.status === REG_STATUS.ACTIVE);
       }).map(function (r) {
-        var o = { name: r.display_name, type: r.type, status: r.status };
+        var o = { name: r.display_name, type: r.type, status: r.status, isHost: r.line_user_id === ev.host_user_id };
         if (admin) {
           o.fee = Number(r.fee) || 0; o.first = toBool(r.first_time); o.share = toBool(r.share_declared); o.referrer = r.referrer;
         }
@@ -341,7 +346,7 @@ function apiAdminOverview_(ctx) {
         .filter(function (r) { return r.event_id === ev.event_id; })
         .map(function (r) {
           return {
-            name: r.display_name, type: r.type, fee: Number(r.fee) || 0, status: r.status,
+            name: r.display_name, type: r.type, fee: Number(r.fee) || 0, status: r.status, isHost: r.line_user_id === ev.host_user_id,
             first: toBool(r.first_time), share: toBool(r.share_declared), referrer: r.referrer, at: r.created_at
           };
         });
@@ -366,7 +371,7 @@ function apiAdminOverview_(ctx) {
     pushLimit: cfg.PUSH_MONTHLY_LIMIT,
     spreadsheetUrl: getSpreadsheet_().getUrl(),
     hosts: hosts,
-    formats: FORMATS.map(function (f) { return { key: f.key, label: f.label, work: f.work }; }),
+    formats: FORMATS.map(function (f) { return { key: f.key, label: f.label, work: f.work, series: f.series, kicker: f.kicker }; }),
     events: list,
     requests: requests
   };
@@ -388,12 +393,18 @@ function apiAdminCreate_(ctx, body) {
   if (fmt.work && fmt.work.required && !String(body.workTitle || '').trim()) throw new Error(fmt.work.label + 'を入力してください');
   if (max < 1) throw new Error('定員は1名以上にしてください');
 
-  // 別会場の場合は、場所代の合計を運営以外の参加者で割り勘
+  // 別会場の場合は、場所代の合計を運営以外の参加者で割り勘（1人あたりの上限つき。足りない分はホストが負担）
   var venueFeeTotal = '';
+  var venueFeeCap = '';
   if (venue !== cfg.DEFAULT_VENUE) {
     var t = String(body.venueFeeTotal == null ? '' : body.venueFeeTotal).trim();
     if (t === '' || isNaN(Number(t)) || Number(t) < 0) throw new Error('別会場の場所代（合計）を入力してください（無料なら0）');
     venueFeeTotal = Math.round(Number(t));
+    if (venueFeeTotal > 0) {
+      var c = String(body.venueFeeCap == null ? '' : body.venueFeeCap).trim();
+      if (c === '' || isNaN(Number(c)) || Number(c) <= 0) throw new Error('場所代の上限（1人あたり）を入力してください');
+      venueFeeCap = Math.round(Number(c));
+    }
   }
 
   var ev = {
@@ -410,6 +421,7 @@ function apiAdminCreate_(ctx, body) {
     work_title: String(body.workTitle || '').trim(),
     venue: venue,
     venue_fee_total: venueFeeTotal,
+    venue_fee_cap: venueFeeCap,
     max_participants: max,
     host_user_id: '',
     host_name: '',
@@ -430,14 +442,18 @@ function apiAdminCreate_(ctx, body) {
   table_('events').append(ev);
 
   // 運営（うってぃ・ぎっしー）がホスト：費用なし・申込シートに登録しない・人数に数えない
-  // それ以外（IQ受講生・一般）がホスト：参加費なし・場所代のみで参加者として登録
+  // それ以外がホスト：区分どおりの料金（IQ受講生は場所代のみ、一般の方は一般の初回／2回目以降）で参加者として登録
   if (!isAdmin(hostUser.line_user_id)) {
-    var venueFee = venueShare(ev, 1, cfg);
+    var role = normalizeRole(hostUser.role);
+    var regs = table_('registrations').all();
+    var first = role === ROLE.GUEST ? isFirstTimeGuest(hostUser.line_user_id, regs, eventsById_(table_('events').all()), ev.event_id) : false;
+    var p = participationFee({ role: role, isFirstTime: first, shareDeclared: false }, cfg);
+    var venueFee = hostVenueFee(ev, 1, cfg);
     table_('registrations').append({
       reg_id: newId_('R'), event_id: ev.event_id, event_title: ev.title, event_date: ev.date,
-      line_user_id: hostUser.line_user_id, display_name: callName_(hostUser), type: REG_TYPE.HOST,
-      first_time: '', share_declared: boolLabel(false), referrer: '', agreed_rules: boolLabel(true),
-      fee: venueFee, venue_fee: venueFee, status: REG_STATUS.ACTIVE, created_at: nowStamp_(), cancelled_at: ''
+      line_user_id: hostUser.line_user_id, display_name: callName_(hostUser), type: regTypeForRole(role),
+      first_time: role === ROLE.GUEST ? boolLabel(first) : '', share_declared: boolLabel(false), referrer: '', agreed_rules: boolLabel(true),
+      fee: p.fee + venueFee, venue_fee: venueFee, status: REG_STATUS.ACTIVE, created_at: nowStamp_(), cancelled_at: ''
     });
   }
 
@@ -447,7 +463,7 @@ function apiAdminCreate_(ctx, body) {
 /**
  * 「募集中」の回の料金を整える。
  *  - 一般の「初回」：有効な申込のうち最初の1件だけ（キャンセルで空いたら次の申込が初回に戻る）
- *  - 別会場の場所代：いまの人数で割り勘
+ *  - 別会場の場所代：いまの人数で割り勘（上限つき。足りない分・端数はホスト）
  * 変わった行だけ書き換える（手で直した金額は、初回・場所代が変わらない限りそのまま）。
  * 戻り値：変わった申込の一覧（becameFirst=初回料金に戻ったもの）
  */
@@ -475,7 +491,7 @@ function refreshFees_() {
       }
     }
     if (!(r.event_id in counts)) counts[r.event_id] = countParticipants(r.event_id, regs).total;
-    var share = venueShare(ev, counts[r.event_id], cfg);
+    var share = venueFeeFor(ev, counts[r.event_id], r.line_user_id === ev.host_user_id, cfg);
     if (String(r.venue_fee) === '' || Number(r.venue_fee) !== share) patch.venue_fee = share;
     if (!Object.keys(patch).length) return;
     var fee = participationFeeOfReg(r, cfg) + share;

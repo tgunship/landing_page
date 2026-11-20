@@ -34,6 +34,7 @@ var TABLES = {
       ['raw_idea', '企画の想い（元の文章）'],
       ['venue', '場所'],
       ['venue_fee_total', '場所代合計（別会場）'],
+      ['venue_fee_cap', '場所代の上限（1人・別会場）'],
       ['max_participants', '定員'],
       ['host_user_id', 'ホストのLINEユーザーID'],
       ['host_name', 'ホスト'],
@@ -88,7 +89,7 @@ var TABLES = {
 };
 
 // 文字列のまま保存したい列（日付や時刻が勝手に変換されないように）
-var NUMBER_COLUMNS = { fee: true, venue_fee: true, max_participants: true, venue_fee_total: true };
+var NUMBER_COLUMNS = { fee: true, venue_fee: true, max_participants: true, venue_fee_total: true, venue_fee_cap: true };
 
 function getSpreadsheet_() {
   var id = prop('SPREADSHEET_ID');

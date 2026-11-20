@@ -66,7 +66,7 @@
 
     function blankForm() {
       const c = S.data.config;
-      return { hostId: S.data.me.id, format: '', workTitle: '', idea: '', date: '', start: c.start, venue: c.venue, venueFeeTotal: '', max: c.max, title: '', description: '', body: '' };
+      return { hostId: S.data.me.id, format: '', workTitle: '', idea: '', date: '', start: c.start, venue: c.venue, venueFeeTotal: '', venueFeeCap: '', max: c.max, title: '', description: '', body: '' };
     }
 
     function captionInfo(f) {
@@ -74,13 +74,16 @@
       const end = addHours(f.start, c.duration);
       return [
         '──────────',
-        `🌿 木陰${fmtOf(f) && fmtOf(f).key !== 'other' ? '｜' + fmtOf(f).label : ''}『${f.title || ''}』`,
+        `🌿 ${seriesOf(f)}｜ここち${fmtOf(f) && fmtOf(f).kicker ? '（' + fmtOf(f).kicker + '）' : ''}`,
+        `『${f.title || ''}』`,
         ...(workCaption(f) ? [workCaption(f)] : []),
         `📅 ${dateLabel(f.date)} ${f.start}〜${end}`,
         `📍 ${f.venue}`,
         ...(isOtherVenue(f)
           ? [`💴 参加費 はじめての方 ${yen(c.fees.first)}／2回目以降 ${yen(c.fees.regular)}`,
-             `　 ＋場所代（合計${yen(Number(f.venueFeeTotal) || 0)}を参加者で割り勘）`]
+             Number(f.venueFeeTotal) > 0
+               ? `　 ＋場所代 1人${yen(Number(f.venueFeeCap) || 0)}まで（合計${yen(Number(f.venueFeeTotal))}を参加者で割り勘。人数が増えると安くなります）`
+               : '　 ＋場所代なし']
           : [`💴 はじめての方 ${yen(c.fees.first + c.fees.venue)}／2回目以降 ${yen(c.fees.regular + c.fees.venue)}（場所代${yen(c.fees.venue)}込み）`]),
         `　 参加後に感想をシェアしてくださる方は${yen(c.fees.discount)}引き`,
         `　 インナークエスト受講生は場所代のみ`,
@@ -130,15 +133,15 @@
               <label class="field"><span>ホスト<span class="req">必須</span></span>
                 <select id="f-host">
                   ${f.hostId ? '' : '<option value="" selected>選んでください</option>'}
-                  ${hosts.map((h) => `<option value="${esc(h.id)}" ${h.id === f.hostId ? 'selected' : ''}>${esc(h.name)}（${h.staff ? '運営・費用なし' : esc(h.role) + '・場所代のみ'}）</option>`).join('')}
+                  ${hosts.map((h) => `<option value="${esc(h.id)}" ${h.id === f.hostId ? 'selected' : ''}>${esc(h.name)}（${h.staff ? '運営・費用なし' : esc(h.role) + '・区分どおりの料金'}）</option>`).join('')}
                 </select>
                 <p class="hint">公式LINEを友だち追加した人（名簿にいる人）から選べます。一般の方もホストになれます。</p>
               </label>
-              <p class="hint" style="margin-top:-6px;margin-bottom:12px">${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは参加費なし・場所代のみで参加者として登録され、人数に数えます。'}</p>
+              <p class="hint" style="margin-top:-6px;margin-bottom:12px">${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは参加者として登録され、人数に数えます。料金は区分どおり（IQ受講生は場所代のみ、一般の方は一般の初回／2回目以降）。'}</p>
               <label class="field"><span>型<span class="req">必須</span></span>
                 <select id="f-format">
                   ${f.format ? '' : '<option value="" selected>選んでください</option>'}
-                  ${S.data.formats.map((x) => `<option value="${esc(x.key)}" ${x.key === f.format ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}
+                  ${S.data.formats.map((x) => `<option value="${esc(x.key)}" ${x.key === f.format ? 'selected' : ''}>${esc(x.label)}（${esc(x.series)}）</option>`).join('')}
                 </select>
               </label>
               ${fmtOf(f) && fmtOf(f).work ? `<label class="field"><span>${esc(fmtOf(f).work.label)}${fmtOf(f).work.required ? '<span class="req">必須</span>' : '（任意）'}</span><input type="text" id="f-work" value="${esc(f.workTitle)}"></label>` : ''}
@@ -154,7 +157,10 @@
                 <label class="field"><span>場所<span class="req">必須</span></span><input type="text" id="f-venue" value="${esc(f.venue)}"></label>
                 <label class="field"><span>定員（ホスト含む）<span class="req">必須</span></span><input type="number" id="f-max" min="1" max="30" value="${esc(f.max)}"></label>
               </div>
-              ${isOtherVenue(f) ? `<label class="field"><span>場所代の合計（円）<span class="req">必須</span></span><input type="number" id="f-venuefee" min="0" step="10" value="${esc(f.venueFeeTotal)}"><span class="hint" style="display:block;font-weight:400">運営以外の参加者（ホスト含む）で割り勘します。無料なら0。</span></label>` : `<p class="hint" style="margin-top:-6px;margin-bottom:12px">場所代：1人${yen(c.fees.venue)}（運営以外）。別の場所を入れると、場所代の合計を割り勘にできます。</p>`}
+              ${isOtherVenue(f) ? `<div class="row">
+                <label class="field"><span>場所代の合計（円）<span class="req">必須</span></span><input type="number" id="f-venuefee" min="0" step="10" value="${esc(f.venueFeeTotal)}"><span class="hint" style="display:block;font-weight:400">無料なら0</span></label>
+                <label class="field"><span>1人あたりの上限（円）${Number(f.venueFeeTotal) > 0 ? '<span class="req">必須</span>' : ''}</span><input type="number" id="f-venuecap" min="0" step="10" value="${esc(f.venueFeeCap)}"><span class="hint" style="display:block;font-weight:400">割り勘がこれを超えたら、足りない分はホストが負担</span></label>
+              </div>${venueExample(f)}` : `<p class="hint" style="margin-top:-6px;margin-bottom:12px">場所代：1人${yen(c.fees.venue)}（運営以外）。別の場所を入れると、場所代の合計を割り勘にできます。</p>`}
               <button class="btn block" id="f-gen">${S.generating ? '<span class="spinner" style="width:18px;height:18px;margin:0;border-width:2px"></span> AIが木陰の言葉を紡いでいます…' : '✨ AIで文章をつくる'}</button>
             </div>
 
@@ -188,7 +194,7 @@
 
             <div class="card">
               <h3>④ 公開して募集をはじめる</h3>
-              <p class="meta">公開すると申込画面に並びます。人数に関係なく開催し（ホストだけでもOK）、当日の開始時刻まで申し込めます。${c.noticeDays}日前の${c.noticeHour}時に、運営へ人数をLINEでお知らせします。${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは自動で参加者に登録されます（参加費なし・場所代のみ）。'}</p>
+              <p class="meta">公開すると申込画面に並びます。人数に関係なく開催し（ホストだけでもOK）、当日の開始時刻まで申し込めます。${c.noticeDays}日前の${c.noticeHour}時に、参加者へリマインド、運営へ人数をLINEでお知らせします。${isStaffHost(f) ? '運営がホストの回は、ホストを参加者に登録せず、人数にも数えません。' : 'ホストは自動で参加者に登録されます（料金は区分どおり）。'}</p>
               <ul class="hint" id="f-missing" style="color:var(--warn)"></ul>
               <button class="btn block" id="f-publish">公開して募集開始</button>
             </div>
@@ -217,6 +223,7 @@
       f.start = $('#f-start').value;
       f.venue = $('#f-venue').value.trim();
       if ($('#f-venuefee')) f.venueFeeTotal = $('#f-venuefee').value;
+      if ($('#f-venuecap')) f.venueFeeCap = $('#f-venuecap').value;
       f.max = Number($('#f-max').value);
       f.title = $('#f-title').value.trim();
       f.description = $('#f-desc').value.trim();
@@ -236,6 +243,7 @@
       if (!f.venue) miss.push(['#f-venue', '場所']);
       if (!f.max || f.max < 1) miss.push(['#f-max', '定員（1名以上）']);
       if (isOtherVenue(f) && String(f.venueFeeTotal).trim() === '') miss.push(['#f-venuefee', '場所代の合計']);
+      if (isOtherVenue(f) && Number(f.venueFeeTotal) > 0 && !(Number(f.venueFeeCap) > 0)) miss.push(['#f-venuecap', '1人あたりの上限']);
       if (!f.title) miss.push(['#f-title', 'タイトル']);
       if (!f.description) miss.push(['#f-desc', '案内文']);
       return miss;
@@ -263,19 +271,31 @@
         await KokagePoster.draw($('#poster'), {
           format: S.format, bg,
           title: f.title || 'タイトル', description: f.description || '案内文がここに入ります',
-          kicker: posterKicker(f),
+          kicker: posterKicker(f), series: seriesOf(f),
           dateLabel: f.date ? dateLabel(f.date) : '開催日', time: `${f.start}〜${addHours(f.start, S.data.config.duration)}`,
           venue: f.venue, handle: S.data.config.instagramHandle
         });
       }, 250);
     }
 
+    function seriesOf(f) { const x = fmtOf(f); return (x && x.series) || '木陰の対話会'; }
     function posterKicker(f) {
       const x = fmtOf(f);
-      if (!x || x.key === 'other') return '';
-      if (f.workTitle && x.key === 'movie') return `${x.label}｜映画『${f.workTitle}』`;
-      if (f.workTitle && x.key === 'reading') return `${x.label}｜『${f.workTitle}』`;
-      return x.label;
+      if (!x) return '';
+      if (f.workTitle && x.key === 'movie') return `映画『${f.workTitle}』`;
+      if (f.workTitle && x.key === 'reading') return `『${f.workTitle}』`;
+      return x.kicker || '';
+    }
+    // 上限つき割り勘の例（打ち合わせで上限を決めるときの目安）
+    function venueExample(f) {
+      const total = Number(f.venueFeeTotal) || 0, cap = Number(f.venueFeeCap) || 0;
+      if (!total || !cap) return '';
+      const ex = [1, 2, 3, 4, 6, 8].map((n) => {
+        const share = Math.min(cap, Math.ceil(total / n / 10) * 10);
+        const host = Math.max(0, total - share * (n - 1));
+        return `${n}人：参加者${yen(n > 1 ? share : 0)}・ホスト${yen(host)}`;
+      });
+      return `<p class="hint" style="margin-top:-6px;margin-bottom:12px">目安（運営がホストの場合、ホスト分は運営が負担）：<br>${ex.join('／')}</p>`;
     }
 
     async function selectBg(id) {
@@ -292,7 +312,7 @@
       if ($('#f-work')) ['input', 'change'].forEach((t) => $('#f-work').addEventListener(t, () => { syncForm(); redraw(); }));
       // 場所を変えたら、割り勘の欄を出し入れする
       $('#f-venue').addEventListener('change', () => { readForm(); renderCreate(); });
-      if ($('#f-venuefee')) ['input', 'change'].forEach((t) => $('#f-venuefee').addEventListener(t, () => syncForm()));
+      ['#f-venuefee', '#f-venuecap'].forEach((sel) => { if ($(sel)) $(sel).addEventListener('change', () => { readForm(); renderCreate(); }); });
       ['#f-idea', '#f-date', '#f-start', '#f-venue', '#f-max', '#f-title', '#f-desc', '#f-body'].forEach((sel) => {
         $(sel).addEventListener('input', () => { syncForm(); redraw(); });
         $(sel).addEventListener('change', () => { syncForm(); redraw(); });
@@ -357,7 +377,7 @@
       const btn = $('#f-publish'); btn.disabled = true; btn.textContent = '公開しています…';
       try {
         const res = await api('admin.createEvent', {
-          hostId: f.hostId, format: f.format, workTitle: f.workTitle, idea: f.idea, date: f.date, start: f.start, venue: f.venue, venueFeeTotal: f.venueFeeTotal, max: f.max,
+          hostId: f.hostId, format: f.format, workTitle: f.workTitle, idea: f.idea, date: f.date, start: f.start, venue: f.venue, venueFeeTotal: f.venueFeeTotal, venueFeeCap: f.venueFeeCap, max: f.max,
           title: f.title, description: f.description, caption: fullCaption(f)
         });
         S.published = res;
@@ -410,7 +430,7 @@
           <div class="meta">
             <div>📅 ${esc(ev.dateLabel)} ${esc(ev.start)}〜${esc(ev.end)}　📍 ${esc(ev.venue)}</div>
             <div>🌿 ホスト：${esc(ev.host || 'なし')}　／　定員 ${ev.max}名</div>
-            ${ev.venueSplit ? `<div>💴 場所代 合計${yen(ev.venueFeeTotal)}を割り勘（いまの人数で1人${yen(ev.counts.total ? Math.ceil(ev.venueFeeTotal / ev.counts.total / 10) * 10 : ev.venueFeeTotal)}）</div>` : ''}
+            ${ev.venueSplit ? `<div>💴 場所代 合計${yen(ev.venueFeeTotal)}・上限1人${yen(ev.venueFeeCap)}（いまの人数で参加者${yen(ev.venueShareNow)}・ホスト${yen(ev.hostVenueFeeNow)}）</div>` : ''}
             ${ev.status === '募集中' ? `<div>⏰ 運営への人数のお知らせ：${esc(ev.noticeLabel)}${ev.noticeSent ? '（送信済み）' : ''}</div>` : ''}
           </div>
           <div class="counts">
@@ -420,7 +440,7 @@
           <button class="btn small ghost" data-copyevent="${esc(ev.id)}">同じ内容で別の日につくる</button>
           <details style="margin-top:8px"><summary>申込者（${regs.length}件）</summary>
             ${regs.length ? `<table class="regs"><thead><tr><th>名前</th><th>区分</th><th>当日</th><th>初回</th><th>シェア</th><th>紹介・きっかけ</th></tr></thead><tbody>
-              ${regs.map((r) => `<tr class="${r.status === 'キャンセル' ? 'cancelled' : ''}"><td>${esc(r.name)}</td><td>${esc(r.type)}</td><td>${yen(r.fee)}</td><td>${r.first ? '○' : ''}</td><td>${r.share ? '○' : ''}</td><td>${esc(r.referrer)}</td></tr>`).join('')}
+              ${regs.map((r) => `<tr class="${r.status === 'キャンセル' ? 'cancelled' : ''}"><td>${esc(r.name)}${r.isHost ? '（ホスト）' : ''}</td><td>${esc(r.type)}</td><td>${yen(r.fee)}</td><td>${r.first ? '○' : ''}</td><td>${r.share ? '○' : ''}</td><td>${esc(r.referrer)}</td></tr>`).join('')}
             </tbody></table>` : '<p class="hint">まだ申込はありません。</p>'}
           </details>
         </article>`;
@@ -431,7 +451,7 @@
       if (!ev) return;
       S.form = Object.assign(blankForm(), {
         hostId: ev.hostId || S.data.me.id, format: ev.format, workTitle: ev.workTitle || '', idea: ev.rawIdea || '', venue: ev.venue,
-        venueFeeTotal: ev.venueSplit ? String(ev.venueFeeTotal) : '', max: ev.max, start: ev.start,
+        venueFeeTotal: ev.venueSplit ? String(ev.venueFeeTotal) : '', venueFeeCap: ev.venueFeeCap ? String(ev.venueFeeCap) : '', max: ev.max, start: ev.start,
         title: ev.title, description: ev.description, body: String(ev.caption || '').split('──────────')[0].trim()
       });
       S.published = null;

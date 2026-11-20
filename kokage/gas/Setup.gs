@@ -47,7 +47,7 @@ function setupSheets() {
     }
     if (key === 'registrations') {
       setDropdown_(sheet, idx.status, [REG_STATUS.ACTIVE, REG_STATUS.CANCELLED]);
-      setDropdown_(sheet, idx.type, [REG_TYPE.HOST, REG_TYPE.IQ, REG_TYPE.GUEST]);
+      setDropdown_(sheet, idx.type, [REG_TYPE.IQ, REG_TYPE.GUEST]);
     }
   });
 

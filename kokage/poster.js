@@ -106,8 +106,14 @@
 
     // 3. ブランド名
     const topY = story ? 300 : 170;
-    ctx.font = `600 66px ${SERIF}`; spacing(ctx, 24);
-    ctx.fillText('木陰', w / 2 + 12, topY);
+    // シリーズ名（木陰の対話会／木陰の読書会 など）。長さに合わせて文字の大きさを調整
+    const series = o.series || '木陰';
+    let sSize = 66, sSpace = series.length <= 2 ? 24 : 10;
+    ctx.font = `600 ${sSize}px ${SERIF}`; spacing(ctx, sSpace);
+    while (ctx.measureText(series).width > w - 260 && sSize > 40) {
+      sSize -= 2; ctx.font = `600 ${sSize}px ${SERIF}`;
+    }
+    ctx.fillText(series, w / 2 + sSpace / 2, topY);
     ctx.font = `500 22px ${SANS}`; spacing(ctx, 8);
     ctx.fillText('KOKAGE  ｜  ここち', w / 2 + 4, topY + 46);
     spacing(ctx, 0);

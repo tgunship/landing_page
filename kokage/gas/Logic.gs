@@ -27,27 +27,27 @@ var GROUND_RULES = [
  */
 var FORMATS = [
   {
-    key: 'empathy', label: '共感セッション',
+    key: 'empathy', label: '共感セッション', series: '木陰の対話会', kicker: '共感セッション',
     guide: 'ホストがいま抱えている悩み・痛みを起点にする場。チェックインのあと、ホスト→共鳴した参加者の順に、ひとり20〜30分の紐解きセッションを2〜3人行う。セッションのあとは全員がニーズ（願い）カードを1枚選び、一言書いて話した人に贈る。アドバイスはせず、相手の話を最後まで聴ききり、共鳴することで、自分の番が来なかった人も自分の内面に触れられる。最後にチェックアウト。',
     work: null
   },
   {
-    key: 'workshop', label: '自己理解ワークショップ',
+    key: 'workshop', label: '自己理解ワークショップ', series: '木陰のワークショップ', kicker: '自己理解',
     guide: '『メンタルモデルワークブック』やインナークエストのワーク（紐解き以外）を、みんなでやってみる場。枠組みがあるので、安心して自分の内面を客観的に眺められる。',
     work: null
   },
   {
-    key: 'reading', label: '読書会',
+    key: 'reading', label: '読書会', series: '木陰の読書会', kicker: '',
     guide: '1冊の本を真ん中に置き、順番に声に出して回し読みする（30分・1章くらい）。本は持っていなくてよく、手ぶらで参加できる。読んだあと、感じたことをシェアして対話する。',
     work: { label: '本のタイトル', required: false }
   },
   {
-    key: 'movie', label: '映画シェア会',
+    key: 'movie', label: '映画シェア会', series: '木陰の映画シェア会', kicker: '',
     guide: '同じ映画を事前に観てきて、感じたこと・心が動いたところをシェアして対話する。感想を語るうちに、自分の内側（大切にしていること・痛み・願い）が見えてくる。',
     work: { label: '映画のタイトル', required: true }
   },
   {
-    key: 'other', label: 'その他',
+    key: 'other', label: 'その他', series: '木陰の対話会', kicker: '',
     guide: '型にとらわれない自由な企画（海辺の散歩、お茶を飲みながら話す会など）。',
     work: null
   }
@@ -59,6 +59,14 @@ function findFormat(value) {
     if (FORMATS[i].key === s || FORMATS[i].label === s) return FORMATS[i];
   }
   return null;
+}
+
+var BRAND_SUFFIX = 'ここち';
+
+/** 表に出す名前：「木陰の読書会｜ここち」の「木陰の読書会」の部分 */
+function seriesName(ev) {
+  var f = findFormat(ev.format);
+  return (f && f.series) || '木陰の対話会';
 }
 
 /** 作品名の案内（読書会・映画シェア会） */
@@ -102,25 +110,44 @@ function isSplitVenue(ev) {
 }
 
 /**
- * 1人あたりの場所代。
+ * 1人あたりの場所代（ホスト以外）。
  * - イバフォルニア・ベース（既定）：1人500円
- * - 別会場：場所代の合計を、運営以外の参加者（申込シートの有効な申込）の人数で割り勘（10円単位で切り上げ）
+ * - 別会場：場所代の合計を、運営以外の参加者（申込シートの有効な申込）の人数で割り勘（10円単位で切り上げ）。
+ *   ただし打ち合わせで決めた「1人あたりの上限」を超えない。足りない分はホストが負担する。
  */
 function venueShare(ev, headcount, cfg) {
   if (!isSplitVenue(ev)) return cfg.VENUE_FEE;
   var total = Number(ev.venue_fee_total) || 0;
   if (total <= 0) return 0;
   var n = Math.max(1, headcount || 0);
-  return Math.ceil(total / n / 10) * 10;
+  var share = Math.ceil(total / n / 10) * 10;
+  var cap = Number(ev.venue_fee_cap) || 0;
+  return cap > 0 ? Math.min(share, cap) : share;
 }
 
 /**
- * 参加費（場所代を除く）。
- * - ホスト・IQ受講生：0円
+ * ホストの場所代（別会場）：合計から、ほかの参加者の分を引いた残り（上限で足りない分・端数はホストが負担）。
+ * イバフォルニア・ベースはほかの人と同じ1人500円。
+ */
+function hostVenueFee(ev, headcount, cfg) {
+  if (!isSplitVenue(ev)) return cfg.VENUE_FEE;
+  var total = Number(ev.venue_fee_total) || 0;
+  var n = Math.max(1, headcount || 0);
+  return Math.max(0, total - venueShare(ev, n, cfg) * (n - 1));
+}
+
+/** その申込の場所代（ホストかどうかで変わる） */
+function venueFeeFor(ev, headcount, isHost, cfg) {
+  return isHost ? hostVenueFee(ev, headcount, cfg) : venueShare(ev, headcount, cfg);
+}
+
+/**
+ * 参加費（場所代を除く）。ホストかどうかには関係なく、区分で決まる。
+ * - IQ受講生：0円
  * - 一般 初回: 1,000円、2回目以降: 6,000円。発信・口コミの自己申告で1,000円引き（0円未満にはならない）
  */
 function participationFee(opts, cfg) {
-  if (opts.isHost || opts.role === ROLE.IQ) return { base: 0, discount: 0, fee: 0 };
+  if (opts.role === ROLE.IQ) return { base: 0, discount: 0, fee: 0 };
   var base = opts.isFirstTime ? cfg.GUEST_FIRST_FEE : cfg.GUEST_REGULAR_FEE;
   var discount = opts.shareDeclared ? Math.min(cfg.ACTION_DISCOUNT_AMOUNT, base) : 0;
   return { base: base, discount: discount, fee: base - discount };
@@ -128,8 +155,8 @@ function participationFee(opts, cfg) {
 
 /** 申込行（スプレッドシート）の区分・初回・割引から参加費を出す */
 function participationFeeOfReg(reg, cfg) {
+  if (String(reg.type).trim() === REG_TYPE.HOST) return 0; // 古い行（区分「ホスト」）の扱い
   return participationFee({
-    isHost: String(reg.type).trim() === REG_TYPE.HOST,
     role: isGuestType(reg.type) ? ROLE.GUEST : ROLE.IQ,
     isFirstTime: toBool(reg.first_time),
     shareDeclared: toBool(reg.share_declared)
@@ -324,19 +351,22 @@ function eventLines(ev) {
     '📍 ' + ev.venue
   ];
   var f = findFormat(ev.format);
-  if (f && f.key !== 'other') lines.unshift('🌿 ' + f.label);
+  lines.unshift('🌿 ' + seriesName(ev) + '｜' + BRAND_SUFFIX + (f && f.kicker ? '（' + f.kicker + '）' : ''));
   var w = workLine(ev);
   if (w) lines.push(w);
   return lines.join('\n');
 }
 
-function venueNote(ev) {
-  return isSplitVenue(ev)
-    ? '場所代は合計' + formatYen(ev.venue_fee_total) + 'を参加者で割り勘（人数によって変わります）'
-    : '';
+function venueNote(ev, isHost) {
+  if (!isSplitVenue(ev)) return '';
+  var cap = Number(ev.venue_fee_cap) || 0;
+  if (isHost) return '場所代は合計' + formatYen(ev.venue_fee_total) + 'を参加者で割り勘し、足りない分をホストが負担します（人数によって変わります）';
+  return '場所代は合計' + formatYen(ev.venue_fee_total) + 'を参加者で割り勘' +
+    (cap ? '（1人' + formatYen(cap) + 'まで。人数が増えると安くなります）' : '（人数によって変わります）');
 }
 
 function feeLines(reg, ev, cfg) {
+  var isHost = !!ev.host_user_id && reg.line_user_id === ev.host_user_id;
   var fee = Number(reg.fee) || 0;
   var venue = reg.venue_fee !== undefined && reg.venue_fee !== '' ? Number(reg.venue_fee) : cfg.VENUE_FEE;
   var parts = [];
@@ -350,7 +380,7 @@ function feeLines(reg, ev, cfg) {
     parts.push('場所代' + formatYen(venue));
   }
   var out = '💴 当日のお支払い：' + formatYen(fee) + '\n（' + parts.join(' ') + '）';
-  var note = venueNote(ev);
+  var note = venueNote(ev, isHost);
   return note ? out + '\n※' + note : out;
 }
 
@@ -387,7 +417,7 @@ function buildCancelReply(name, ev, others) {
 }
 
 /** 運営へ：開催3日前の人数のお知らせ（会場の予約・人数確認用） */
-function buildAdminNoticeMessage(ev, counts, perPerson) {
+function buildAdminNoticeMessage(ev, counts, perPerson, hostFee) {
   var lines = [
     '【管理者通知｜3日前の人数】',
     formatJpDate(ev.date) + ' ' + ev.start_time + '〜' + ev.end_time,
@@ -395,7 +425,10 @@ function buildAdminNoticeMessage(ev, counts, perPerson) {
     '📍 ' + ev.venue,
     '合計' + counts.total + '名（一般' + counts.guests + '名 / 仲間・ホスト' + counts.members + '名）※運営は含みません'
   ];
-  if (isSplitVenue(ev)) lines.push('場所代 合計' + formatYen(ev.venue_fee_total) + ' → いまの人数で1人' + formatYen(perPerson));
+  if (isSplitVenue(ev)) {
+    lines.push('場所代 合計' + formatYen(ev.venue_fee_total) + ' → いまの人数で1人' + formatYen(perPerson) +
+      (hostFee !== undefined && hostFee !== null ? '・ホスト' + formatYen(hostFee) : ''));
+  }
   lines.push('', '会場の予約・人数の確認をお願いします。これ以降の申込・キャンセルは公式LINEの受信箱に「（人数お知らせ後）」と付いて届きます。');
   return lines.join('\n');
 }
@@ -409,6 +442,24 @@ function buildChangeMessage(kind, ev, name, counts, forHost) {
     (name || '参加者') + 'さんが' + (kind === 'cancel' ? 'キャンセルしました。' : '申し込みました。'),
     '現在 合計' + counts.total + '名（一般' + counts.guests + '名 / 仲間・ホスト' + counts.members + '名）',
     forHost ? '申込状況はメニューの「申込状況」から見られます。' : '会場予約の人数をご確認ください。'
+  ].join('\n');
+}
+
+/** 参加者へ：開催3日前のリマインド */
+function buildReminderMessage(name, ev, reg, cfg) {
+  return [
+    '【3日後は木陰です🌿】',
+    (name ? name + 'さん、' : '') + 'お申し込みいただいている木陰が近づいてきました。',
+    '',
+    '『' + ev.title + '』',
+    eventLines(ev),
+    feeLines(reg, ev, cfg) + '（当日会場でお支払いください）',
+    '',
+    '前半2時間はテーマに沿ってじっくり、後半1時間は感想の投稿やフリートークの時間です。',
+    '木陰のグランドルール：',
+    GROUND_RULES.map(function (r) { return '・' + r; }).join('\n'),
+    '',
+    'ご都合が悪くなった場合は、メニューの「わたしの予約」からキャンセルできます。当日お会いできるのを楽しみにしています。'
   ].join('\n');
 }
 
@@ -435,7 +486,8 @@ if (typeof module !== 'undefined' && module.exports) {
     FORMATS: FORMATS, GROUND_RULES: GROUND_RULES, findFormat: findFormat, workLine: workLine, eventLines: eventLines,
     ROLE: ROLE, ROLE_LABEL: ROLE_LABEL, REG_TYPE: REG_TYPE, EVENT_STATUS: EVENT_STATUS, REG_STATUS: REG_STATUS,
     normalizeRole: normalizeRole, regTypeForRole: regTypeForRole, isGuestType: isGuestType, toBool: toBool,
-    isSplitVenue: isSplitVenue, venueShare: venueShare, participationFee: participationFee, participationFeeOfReg: participationFeeOfReg,
+    isSplitVenue: isSplitVenue, venueShare: venueShare, hostVenueFee: hostVenueFee, venueFeeFor: venueFeeFor,
+    seriesName: seriesName, buildReminderMessage: buildReminderMessage, participationFee: participationFee, participationFeeOfReg: participationFeeOfReg,
     isFirstTimeGuest: isFirstTimeGuest, firstTimeAssignments: firstTimeAssignments, countParticipants: countParticipants,
     makeDate: makeDate, normalizeDate: normalizeDate, normalizeTime: normalizeTime, addHoursToTime: addHoursToTime,
     coreEnd: coreEnd, noticeTimeOf: noticeTimeOf, shouldNoticeNow: shouldNoticeNow, shouldThankNow: shouldThankNow,
