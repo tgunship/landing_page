@@ -234,6 +234,40 @@
     .notes div:nth-child(2) li::before { background: var(--sky); }
     @media (max-width: 720px) { .prices, .notes { grid-template-columns: 1fr; } }
 
+    /* お支払い・キャンセル */
+    .policy { margin-top: clamp(48px, 7vw, 72px); display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .policy__box { background: var(--white); border-radius: 26px; padding: clamp(24px, 4vw, 36px); }
+    .policy__box h3 { font-size: 1.2rem; margin-bottom: .8em; display: flex; align-items: center; gap: .6em; }
+    .policy__box h3::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+    .policy__box:nth-child(2) h3::before { background: var(--pink); }
+    .policy__box ol, .policy__box ul { margin: 0; padding: 0; list-style: none; }
+    .policy__box li { font-size: .94rem; }
+    .paysteps li { position: relative; padding: 0 0 1em 2.4em; counter-increment: pay; }
+    .paysteps { counter-reset: pay; }
+    .paysteps li::before { content: counter(pay); position: absolute; left: 0; top: .2em; width: 1.6em; height: 1.6em; border-radius: 50%; background: var(--paper-deep); font-family: var(--mincho); font-weight: 700; font-size: .9rem; display: grid; place-items: center; line-height: 1; }
+    .paysteps li:last-child { padding-bottom: 0; }
+    .paysteps b { font-weight: 700; }
+    .fees { border-top: 1px solid var(--line); }
+    .fees li { display: flex; justify-content: space-between; gap: 1em; padding: .65em 0; border-bottom: 1px solid var(--line); }
+    .fees li span:last-child { font-family: var(--mincho); font-weight: 700; white-space: nowrap; }
+    .fees li:first-child span:last-child { color: var(--ink-soft); font-weight: 600; }
+    .policy__note { margin: 1.2em 0 0; font-size: .85rem; color: var(--ink-soft); line-height: 1.9; }
+    .policy__note + .policy__note { margin-top: .5em; }
+    @media (max-width: 760px) { .policy { grid-template-columns: 1fr; } }
+
+    /* Instagram */
+    .insta { margin: clamp(48px, 7vw, 72px) auto 0; max-width: 640px; display: flex; align-items: center; gap: 28px; padding: 24px 28px; border-radius: 26px; border: 1.5px dashed var(--ink); }
+    .insta__qr { width: 132px; height: 132px; flex-shrink: 0; border-radius: 12px; background: var(--white); padding: 6px; }
+    .insta__qr img { width: 100%; height: 100%; }
+    .insta p { margin: 0 0 .8em; font-size: .95rem; }
+    .insta p small { display: block; color: var(--ink-soft); font-size: .82rem; }
+    .insta .btn { padding: .7em 1.4em; font-size: .9rem; box-shadow: none; background: linear-gradient(45deg, #f9b233, #f2762e 40%, #e84a7f 75%, #c13584); }
+    @media (max-width: 640px) {
+      .insta { flex-direction: column; text-align: center; gap: 14px; }
+      .insta__qr { display: none; }
+      .insta p small { display: none; }
+    }
+
     /* お申し込み */
     .contact { background: var(--navy); color: var(--white); text-align: center; }
     .contact .label { color: rgba(255, 255, 255, .75); }
@@ -399,7 +433,7 @@
                 <p>最後に、セッションを通して感じたことや、受け取ったものを分かち合います。言葉と絵を、お守りのように持ち帰っていただけたら嬉しいです。</p>
               </li>
             </ol>
-            <p class="course__note">ご自身も、自分に向けて言葉や絵をかいてみることができます（かかなくても大丈夫です）。</p>
+            <p class="course__note">ご自身も、自分に向けて言葉や絵をかいてみることができます（かかなくても大丈夫です）。画材はこちらでご用意しますが、使い慣れた画材（色鉛筆やクレヨンなど）があれば、お持ちください。</p>
           </div>
         </article>
 
@@ -517,6 +551,16 @@
             <p>話を聴きながら、感じ取ったものを色と形で描きます。絵を受け取る時間をご案内します。</p>
           </article>
         </div>
+        <div class="insta rv">
+          <div class="insta__qr"><img src="images/utty-instagram-qr.png" width="400" height="400" alt="うってぃのInstagramのQRコード"></div>
+          <div>
+            <p>うってぃの日々の発信は、Instagramで。<small>スマートフォンのカメラでQRコードを読み取ると、アカウントが開きます。</small></p>
+            <a href="https://www.instagram.com/takeshi.uchida.5203/" class="btn" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+              @takeshi.uchida.5203
+            </a>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -549,6 +593,7 @@
               <li>開催場所・日程はご相談のうえ決定します</li>
               <li>会場によっては、別途会場費をいただく場合があります</li>
               <li>リトリートや合宿のプログラムとして行うこともできます</li>
+              <li>当日の持ち物は、特にありません（スタンダードコースで、ご自身の画材を使いたい方はお持ちください）</li>
             </ul>
           </div>
           <div class="rv">
@@ -559,6 +604,29 @@
               <li>受け取った言葉と絵は、そのままお持ち帰りいただけます</li>
               <li>医療行為や治療を目的としたものではありません</li>
             </ul>
+          </div>
+        </div>
+        <div class="policy">
+          <div class="policy__box rv">
+            <h3>お支払いについて</h3>
+            <ol class="paysteps">
+              <li>お支払い方法は<b>「銀行振込」</b>または<b>「当日現金払い」</b>から、お申し込みの際にお選びください。</li>
+              <li>銀行振込の方には、お申し込み後、公式LINEで振込先口座をお知らせします。</li>
+              <li>振込先のお知らせから<b>10日以内</b>にお振り込みください。開催日の10日前を過ぎてからお申し込みの場合は、お知らせから<b>3日以内</b>（開催日の前日まで）にお願いします。</li>
+              <li>ご入金の確認をもって、正式なお申し込みとなります。</li>
+            </ol>
+            <p class="policy__note">※ ご事情によりお振り込みが期日に間に合わない場合は、事前にご連絡ください。</p>
+          </div>
+          <div class="policy__box rv">
+            <h3>キャンセルについて</h3>
+            <ul class="fees">
+              <li><span>開催日の21日前まで</span><span>かかりません</span></li>
+              <li><span>20日前〜11日前</span><span>参加費の10%</span></li>
+              <li><span>10日前〜前々日</span><span>参加費の30%</span></li>
+              <li><span>前日・当日</span><span>参加費の全額</span></li>
+            </ul>
+            <p class="policy__note">※ ご返金の際は、キャンセル料と返金手数料3,000円を差し引いた金額をお振り込みします。キャンセル料がかからない場合も、返金手数料はいただきます。</p>
+            <p class="policy__note">※ キャンセルのご連絡は、公式LINEからお願いします。</p>
           </div>
         </div>
       </div>
@@ -574,7 +642,7 @@
         <h2 class="title rv">お申し込み・お問い合わせ</h2>
         <p class="contact__msg rv">言葉と絵を、お守りのように。<br>あなたの願いを受け取る時間を、<br class="sp">ご一緒できたら嬉しいです。</p>
         <div class="contact__box rv">
-          <p>ご希望のコースと、ご都合のよい時期・場所を添えて、<br class="pc">かもえさ公式LINEからお気軽にご連絡ください。</p>
+          <p>ご希望のコース、ご都合のよい時期・場所、お支払い方法（銀行振込／当日現金払い）を添えて、かもえさ公式LINEからお気軽にご連絡ください。</p>
           <a href="https://lin.ee/NChte87" class="btn btn--line" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3C6.5 3 2 6.6 2 11.1c0 4 3.6 7.300 8.400 8 .300.100.800.200.900.500.100.300.100.700 0 1l-.100.900c0 .300-.200 1 .900.500s5.700-3.400 7.800-5.800c1.400-1.600 2.100-3.200 2.100-5C22 6.600 17.500 3 12 3z"/></svg>
             かもえさ公式LINEで連絡する
