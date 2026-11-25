@@ -53,4 +53,4 @@
 ## その他
 
 - 当日の持ち物は特になし。スタンダードコースで自分の画材を使いたい方は持参可
-- うってぃのInstagram（https://www.instagram.com/takeshi.uchida.5203/）をメンバー紹介の下に掲載。QRコードは `images/utty-instagram-qr.png`（PC表示のみ。スマホではボタンのみ）
+- メンバー紹介の下にInstagramを掲載：うってぃ（https://www.instagram.com/takeshi.uchida.5203/）、ゆーき（https://www.instagram.com/ukioffice/）。QRコードは `images/utty-instagram-qr.png`、`images/yuki-instagram-qr.png`（PC表示のみ。スマホではボタンのみ）

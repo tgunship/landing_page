@@ -256,16 +256,19 @@
     @media (max-width: 760px) { .policy { grid-template-columns: 1fr; } }
 
     /* Instagram */
-    .insta { margin: clamp(48px, 7vw, 72px) auto 0; max-width: 640px; display: flex; align-items: center; gap: 28px; padding: 24px 28px; border-radius: 26px; border: 1.5px dashed var(--ink); }
-    .insta__qr { width: 132px; height: 132px; flex-shrink: 0; border-radius: 12px; background: var(--white); padding: 6px; }
+    .insta { margin: clamp(48px, 7vw, 72px) auto 0; max-width: 760px; padding: 26px 28px; border-radius: 26px; border: 1.5px dashed var(--ink); }
+    .insta__lead { text-align: center; margin: 0 0 20px; font-size: .95rem; }
+    .insta__lead small { display: block; color: var(--ink-soft); font-size: .82rem; }
+    .insta__list { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .insta__item { display: flex; align-items: center; gap: 18px; }
+    .insta__qr { width: 120px; height: 120px; flex-shrink: 0; border-radius: 12px; background: var(--white); padding: 6px; }
     .insta__qr img { width: 100%; height: 100%; }
-    .insta p { margin: 0 0 .8em; font-size: .95rem; }
-    .insta p small { display: block; color: var(--ink-soft); font-size: .82rem; }
-    .insta .btn { padding: .7em 1.4em; font-size: .9rem; box-shadow: none; background: linear-gradient(45deg, #f9b233, #f2762e 40%, #e84a7f 75%, #c13584); }
-    @media (max-width: 640px) {
-      .insta { flex-direction: column; text-align: center; gap: 14px; }
-      .insta__qr { display: none; }
-      .insta p small { display: none; }
+    .insta__name { margin: 0 0 .4em; font-family: var(--mincho); font-weight: 600; font-size: 1.1rem; }
+    .insta .btn { padding: .65em 1.2em; font-size: .85rem; box-shadow: none; background: linear-gradient(45deg, #f9b233, #f2762e 40%, #e84a7f 75%, #c13584); }
+    @media (max-width: 720px) {
+      .insta__list { grid-template-columns: 1fr; gap: 14px; }
+      .insta__qr, .insta__lead small { display: none; }
+      .insta__item { justify-content: center; text-align: center; flex-direction: column; gap: 4px; }
     }
 
     /* お申し込み */
@@ -552,13 +555,22 @@
           </article>
         </div>
         <div class="insta rv">
-          <div class="insta__qr"><img src="images/utty-instagram-qr.png" width="400" height="400" alt="うってぃのInstagramのQRコード"></div>
-          <div>
-            <p>うってぃの日々の発信は、Instagramで。<small>スマートフォンのカメラでQRコードを読み取ると、アカウントが開きます。</small></p>
-            <a href="https://www.instagram.com/takeshi.uchida.5203/" class="btn" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
-              @takeshi.uchida.5203
-            </a>
+          <p class="insta__lead">メンバーの日々の発信は、<br class="sp">Instagramで。<small>スマートフォンのカメラでQRコードを読み取ると、アカウントが開きます。</small></p>
+          <div class="insta__list">
+          <div class="insta__item">
+            <div class="insta__qr"><img src="images/utty-instagram-qr.png" width="400" height="400" loading="lazy" alt="うってぃのInstagramのQRコード"></div>
+            <div>
+              <p class="insta__name">うってぃ</p>
+              <a href="https://www.instagram.com/takeshi.uchida.5203/" class="btn" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>@takeshi.uchida.5203</a>
+            </div>
+          </div>
+          <div class="insta__item">
+            <div class="insta__qr"><img src="images/yuki-instagram-qr.png" width="400" height="400" loading="lazy" alt="ゆーきのInstagramのQRコード"></div>
+            <div>
+              <p class="insta__name">ゆーき</p>
+              <a href="https://www.instagram.com/ukioffice/" class="btn" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>@ukioffice</a>
+            </div>
+          </div>
           </div>
         </div>
       </div>
